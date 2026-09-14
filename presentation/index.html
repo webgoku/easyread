@@ -19,10 +19,13 @@
       --card-bg:     rgba(255,255,255,0.02);
       --radius-sm:   12px;
       --radius-lg:   18px;
-      --section-gap: 120px;
     }
 
-    html { scroll-behavior: smooth; }
+    html, body {
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+    }
 
     body {
       background: var(--bg);
@@ -44,10 +47,6 @@
       max-width: 1080px;
       margin: 0 auto;
       padding: 0 24px;
-    }
-
-    section {
-      padding: var(--section-gap) 0;
     }
 
     .section-label {
@@ -87,19 +86,119 @@
       background-clip: text;
     }
 
+    /* ── Internal scrollbar (minimal) ────────────────────────── */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 2px; }
+
+    /* ─────────────────────────────────────────────────────────── */
+    /* SLIDES WRAPPER                                              */
+    /* ─────────────────────────────────────────────────────────── */
+    .slides-wrapper {
+      display: flex;
+      flex-direction: row;
+      height: 100vh;
+      transition: transform 0.55s cubic-bezier(0.65, 0, 0.35, 1);
+      will-change: transform;
+    }
+
+    section {
+      width: 100vw;
+      height: 100vh;
+      flex-shrink: 0;
+      overflow-y: auto;
+      overflow-x: hidden;
+      display: flex;
+      align-items: center;
+      padding: 52px 0 72px;
+    }
+
+    section > .container { width: 100%; }
+
+    /* ─────────────────────────────────────────────────────────── */
+    /* NAVIGATION OVERLAY                                          */
+    /* ─────────────────────────────────────────────────────────── */
+    .nav-arrow {
+      position: fixed;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 200;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 50%;
+      width: 44px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: rgba(255,255,255,0.55);
+      font-size: 1rem;
+      transition: background 0.2s, color 0.2s, opacity 0.2s;
+      user-select: none;
+      outline: none;
+    }
+
+    .nav-arrow:hover {
+      background: rgba(255,255,255,0.12);
+      color: #fff;
+    }
+
+    .nav-arrow.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    #nav-prev { left: 14px; }
+    #nav-next { right: 14px; }
+
+    .nav-dots {
+      position: fixed;
+      bottom: 22px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 8px;
+      z-index: 200;
+    }
+
+    .nav-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.22);
+      border: none;
+      cursor: pointer;
+      transition: background 0.25s, transform 0.25s;
+      outline: none;
+      padding: 0;
+    }
+
+    .nav-dot.active {
+      background: var(--violet-light);
+      transform: scale(1.4);
+    }
+
+    .slide-counter {
+      position: fixed;
+      top: 18px;
+      right: 22px;
+      font-size: 0.70rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      color: rgba(255,255,255,0.22);
+      z-index: 200;
+      font-variant-numeric: tabular-nums;
+    }
+
     /* ─────────────────────────────────────────────────────────── */
     /* 1. HERO                                                     */
     /* ─────────────────────────────────────────────────────────── */
     #hero {
-      min-height: 92vh;
-      display: flex;
-      align-items: center;
       position: relative;
       overflow: hidden;
-      padding: 80px 0;
     }
 
-    /* subtle radial glow */
     #hero::before {
       content: '';
       position: absolute;
@@ -237,8 +336,6 @@
     /* ─────────────────────────────────────────────────────────── */
     #pipeline {
       background: rgba(255,255,255,0.015);
-      border-top: var(--card-border);
-      border-bottom: var(--card-border);
     }
 
     .pipeline-flow {
@@ -262,7 +359,6 @@
       padding: 0 8px;
     }
 
-    /* arrow connector between steps */
     .agent-step:not(:last-child)::after {
       content: '→';
       position: absolute;
@@ -310,31 +406,26 @@
     /* ─────────────────────────────────────────────────────────── */
     /* 4. PRIMA / DOPO                                             */
     /* ─────────────────────────────────────────────────────────── */
-    #prima-dopo {
-      background: var(--bg);
-    }
-
     #prima-dopo h2 { margin-bottom: 8px; }
-    .pd-sub { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 40px; }
+    .pd-sub { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 28px; }
 
     .pd-columns {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 20px;
       align-items: stretch;
-      margin-bottom: 32px;
+      margin-bottom: 24px;
     }
 
     @media (max-width: 680px) {
       .pd-columns { grid-template-columns: 1fr; }
     }
 
-    /* PRIMA card */
     .pd-before {
       background: rgba(255,255,255,0.03);
       border: 1px solid rgba(255,255,255,0.10);
       border-radius: var(--radius-lg);
-      padding: 28px 30px;
+      padding: 24px 28px;
     }
 
     .pd-before-label {
@@ -343,7 +434,7 @@
       letter-spacing: 0.16em;
       text-transform: uppercase;
       color: rgba(255,255,255,0.30);
-      margin-bottom: 18px;
+      margin-bottom: 16px;
     }
 
     .pd-before-text {
@@ -356,18 +447,17 @@
     }
 
     .pd-before-note {
-      margin-top: 20px;
+      margin-top: 16px;
       font-size: 0.82rem;
       color: rgba(255,80,160,0.70);
       font-style: italic;
     }
 
-    /* DOPO card */
     .pd-after {
       background: linear-gradient(135deg, rgba(161,0,255,0.08), rgba(255,80,160,0.05));
       border: 1px solid rgba(161,0,255,0.30);
       border-radius: var(--radius-lg);
-      padding: 28px 30px;
+      padding: 24px 28px;
       position: relative;
       overflow: hidden;
     }
@@ -387,7 +477,7 @@
       letter-spacing: 0.16em;
       text-transform: uppercase;
       color: var(--violet-light);
-      margin-bottom: 18px;
+      margin-bottom: 16px;
     }
 
     .pd-section-title {
@@ -397,7 +487,7 @@
       letter-spacing: 0.10em;
       color: rgba(255,255,255,0.50);
       margin-bottom: 8px;
-      margin-top: 18px;
+      margin-top: 16px;
     }
 
     .pd-section-title:first-of-type { margin-top: 0; }
@@ -424,8 +514,7 @@
       padding: 0 5px;
     }
 
-    /* azioni */
-    .action-list { list-style: none; display: flex; flex-direction: column; gap: 10px; margin-top: 6px; }
+    .action-list { list-style: none; display: flex; flex-direction: column; gap: 8px; margin-top: 6px; }
 
     .action-item {
       display: flex;
@@ -434,7 +523,7 @@
       background: rgba(255,255,255,0.03);
       border: var(--card-border);
       border-radius: var(--radius-sm);
-      padding: 12px 14px;
+      padding: 10px 12px;
       font-size: 0.88rem;
       color: rgba(255,255,255,0.80);
     }
@@ -449,28 +538,27 @@
     .action-priority.urgent  { background: #FF4D4D; box-shadow: 0 0 6px rgba(255,77,77,0.5); }
     .action-priority.optional { background: #FFB800; box-shadow: 0 0 6px rgba(255,184,0,0.4); }
 
-    /* glossario */
-    .glossary-list { display: flex; flex-direction: column; gap: 14px; margin-top: 24px; }
+    .glossary-list { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
 
     .glossary-item {
       background: var(--card-bg);
       border: var(--card-border);
       border-radius: var(--radius-sm);
-      padding: 16px 20px;
+      padding: 12px 16px;
     }
 
     .glossary-term {
       font-weight: 700;
       color: var(--violet-light);
-      margin-bottom: 4px;
+      margin-bottom: 3px;
+      font-size: 0.92rem;
     }
 
     .glossary-def {
-      font-size: 0.88rem;
+      font-size: 0.85rem;
       color: rgba(255,255,255,0.68);
     }
 
-    /* safety badge */
     .safety-badge {
       display: inline-flex;
       align-items: center;
@@ -478,11 +566,11 @@
       background: rgba(0,210,120,0.10);
       border: 1px solid rgba(0,210,120,0.28);
       border-radius: 100px;
-      padding: 8px 18px;
-      font-size: 0.80rem;
+      padding: 7px 16px;
+      font-size: 0.78rem;
       font-weight: 600;
       color: #00D87A;
-      margin-top: 24px;
+      margin-top: 16px;
     }
 
     .safety-badge::before {
@@ -493,7 +581,7 @@
     /* ─────────────────────────────────────────────────────────── */
     /* 5. AUTONOMIA & LIMITI                                       */
     /* ─────────────────────────────────────────────────────────── */
-    #limiti { background: rgba(255,255,255,0.015); border-top: var(--card-border); border-bottom: var(--card-border); }
+    #limiti { background: rgba(255,255,255,0.015); }
 
     .check-list { list-style: none; display: flex; flex-direction: column; gap: 12px; margin-top: 18px; }
 
@@ -524,7 +612,7 @@
       border: 1px solid rgba(190,130,255,0.20);
       border-radius: var(--radius-sm);
       padding: 18px 22px;
-      margin-top: 24px;
+      margin-top: 20px;
     }
 
     .eye-box-title {
@@ -551,11 +639,10 @@
       color: rgba(190,130,255,0.50);
     }
 
-    /* Limits table */
     .limits-table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 32px;
+      margin-top: 28px;
       font-size: 0.90rem;
     }
 
@@ -571,7 +658,7 @@
     }
 
     .limits-table tbody td {
-      padding: 14px;
+      padding: 12px 14px;
       border-bottom: 1px solid rgba(255,255,255,0.05);
       color: rgba(255,255,255,0.75);
       vertical-align: top;
@@ -588,8 +675,6 @@
     /* ─────────────────────────────────────────────────────────── */
     /* 6. PITCH / WRAP-UP                                          */
     /* ─────────────────────────────────────────────────────────── */
-    #pitch { padding-bottom: 140px; }
-
     .pitch-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -604,7 +689,7 @@
       background: var(--card-bg);
       border: var(--card-border);
       border-radius: var(--radius-lg);
-      padding: 28px 30px;
+      padding: 24px 28px;
     }
 
     .pitch-card h3 {
@@ -613,16 +698,16 @@
       letter-spacing: 0.16em;
       text-transform: uppercase;
       color: var(--violet-light);
-      margin-bottom: 14px;
+      margin-bottom: 12px;
     }
 
     .pitch-card p, .pitch-card li {
-      font-size: 0.93rem;
+      font-size: 0.92rem;
       color: rgba(255,255,255,0.78);
       line-height: 1.65;
     }
 
-    .pitch-card ul { list-style: none; display: flex; flex-direction: column; gap: 8px; padding: 0; }
+    .pitch-card ul { list-style: none; display: flex; flex-direction: column; gap: 7px; padding: 0; }
 
     .pitch-card ul li {
       padding-left: 14px;
@@ -655,25 +740,24 @@
       background: rgba(161,0,255,0.12);
       border: 1px dashed rgba(161,0,255,0.40);
       border-radius: 8px;
-      padding: 12px 18px;
+      padding: 10px 16px;
       font-size: 0.88rem;
       color: rgba(190,130,255,0.80);
       font-style: italic;
       margin-top: 6px;
     }
 
-    /* closing statement */
     .closing {
-      margin-top: 56px;
+      margin-top: 40px;
       text-align: center;
     }
 
     .closing-statement {
-      font-size: clamp(1.2rem, 3vw, 1.8rem);
+      font-size: clamp(1.1rem, 2.5vw, 1.6rem);
       font-weight: 700;
       line-height: 1.35;
       max-width: 680px;
-      margin: 0 auto 14px;
+      margin: 0 auto 12px;
     }
 
     .closing-sub {
@@ -681,396 +765,567 @@
       color: var(--text-muted);
     }
 
-    /* ── Footer ───────────────────────────────────────────────── */
-    footer {
-      border-top: var(--card-border);
-      padding: 24px 0;
+    /* ── Prima/Dopo tabs ─────────────────────────────────────── */
+    .pd-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .pd-tab {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 8px;
+      padding: 7px 20px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: rgba(255,255,255,0.50);
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s, color 0.2s;
+      outline: none;
+    }
+
+    .pd-tab.active {
+      background: rgba(161,0,255,0.18);
+      border-color: rgba(161,0,255,0.40);
+      color: var(--violet-light);
+    }
+
+    .pd-example { display: none; }
+    .pd-example.active { display: block; }
+
+    /* ── Slide footer line ────────────────────────────────────── */
+    .slide-footer {
+      margin-top: 32px;
       text-align: center;
-      font-size: 0.78rem;
-      color: rgba(255,255,255,0.22);
+      font-size: 0.72rem;
+      color: rgba(255,255,255,0.18);
     }
   </style>
 </head>
 <body>
 
 <!-- ═══════════════════════════════════════════════════════════ -->
-<!-- 1. HERO                                                      -->
+<!-- NAVIGATION OVERLAY                                           -->
 <!-- ═══════════════════════════════════════════════════════════ -->
-<section id="hero">
-  <div class="container">
-    <div class="hero-content">
-      <div class="hero-tag">
-        <span class="dot"></span>
-        Hagenthon 2026 &nbsp;·&nbsp; Tema 01 — Accessibilità Digitale
-      </div>
+<button class="nav-arrow" id="nav-prev" aria-label="Slide precedente">&#8592;</button>
+<button class="nav-arrow" id="nav-next" aria-label="Slide successiva">&#8594;</button>
+<div class="nav-dots" id="nav-dots"></div>
+<div class="slide-counter" id="slide-counter"></div>
 
-      <h1 class="hero-title">
-        <span class="grad">EasyRead</span>
-      </h1>
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- SLIDES                                                       -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="slides-wrapper" id="slides-wrapper">
 
-      <p class="hero-tagline">
-        Una pipeline di 5 agenti AI che trasforma i documenti della Pubblica
-        Amministrazione italiana in linguaggio semplice — senza alterare
-        nessun numero, nessuna data, nessuna informazione critica.
-      </p>
-
-      <div class="hero-meta">
-        <div class="meta-item">
-          <span class="meta-label">Evento</span>
-          <span class="meta-value">Hagenthon 2026</span>
+  <!-- 1. HERO -->
+  <section id="hero">
+    <div class="container">
+      <div class="hero-content">
+        <div class="hero-tag">
+          <span class="dot"></span>
+          Hagenthon 2026 &nbsp;·&nbsp; Tema 01 — Accessibilità Digitale
         </div>
-        <div class="meta-item">
-          <span class="meta-label">Tema</span>
-          <span class="meta-value">01 — Accessibilità Digitale</span>
-        </div>
-        <div class="meta-item">
-          <span class="meta-label">Tecnologia core</span>
-          <span class="meta-value">Claude API (Anthropic)</span>
+
+        <h1 class="hero-title">
+          <span class="grad">EasyRead</span>
+        </h1>
+
+        <p class="hero-tagline">
+          Una pipeline di 5 agenti AI che trasforma i documenti della Pubblica
+          Amministrazione italiana in linguaggio semplice — senza alterare
+          nessun numero, nessuna data, nessuna informazione critica.
+        </p>
+
+        <div class="hero-meta">
+          <div class="meta-item">
+            <span class="meta-label">Evento</span>
+            <span class="meta-value">Hagenthon 2026</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">Tema</span>
+            <span class="meta-value">01 — Accessibilità Digitale</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">Tecnologia core</span>
+            <span class="meta-value">Claude API (Anthropic)</span>
+          </div>
         </div>
       </div>
     </div>
-  </div>
-</section>
+  </section>
 
-<!-- ═══════════════════════════════════════════════════════════ -->
-<!-- 2. PERSONA & BARRIERA                                        -->
-<!-- ═══════════════════════════════════════════════════════════ -->
-<section id="persona">
-  <div class="container">
-    <span class="section-label">Il problema reale</span>
-    <h2 style="margin-bottom: 36px;">Chi è Giulia e dove si ferma</h2>
+  <!-- 2. PERSONA & BARRIERA -->
+  <section id="persona">
+    <div class="container">
+      <span class="section-label">Il problema reale</span>
+      <h2 style="margin-bottom: 28px;">Chi non riesce a leggere — e perché</h2>
 
-    <div class="inner">
-      <!-- Chi è -->
-      <div class="card">
-        <div class="persona-avatar">👩</div>
-        <h3 style="margin-bottom: 10px;">Giulia, 68 anni — pensionata, licenza media</h3>
-        <p>
-          Vive sola. Usa lo smartphone per messaggiare con i figli ma non naviga
-          sui siti della pubblica amministrazione. Quando arriva una lettera
-          ufficiale, la legge una volta e se non capisce la mette da parte.
-        </p>
-
-        <div class="blockquote">
-          "art. 158, comma 2, D.Lgs. 30.4.1992, n. 285 (Codice della Strada) —
-          Importo 29,40 EUR (già ridotto del 30%). Il pagamento effettuato entro
-          10 giorni dalla data della violazione non comporterà addebito delle spese
-          di notifica."
-        </div>
-
-        <p style="font-size:0.90rem; color: rgba(255,255,255,0.60);">
-          Giulia riceve un <strong>Preavviso di accertamento</strong> da Roma
-          Capitale: la sua auto è stata fotografata in sosta vietata il 28 luglio 2026.
-        </p>
-      </div>
-
-      <!-- Dove si ferma -->
-      <div>
-        <div class="card" style="margin-bottom: 16px;">
-          <h3 style="margin-bottom: 12px;">Le domande che non trovano risposta</h3>
-          <ul class="question-list">
+      <div class="inner">
+        <!-- Giulia -->
+        <div class="card">
+          <div class="persona-avatar">👩</div>
+          <h3 style="margin-bottom: 10px;">Giulia, 68 anni — pensionata, licenza media</h3>
+          <p style="font-size:0.90rem; color: rgba(255,255,255,0.65); margin-bottom: 4px;">
+            Riceve un <strong>Preavviso di accertamento</strong> da Roma Capitale.
+          </p>
+          <div class="blockquote">
+            "art. 158, comma 2, D.Lgs. 30.4.1992, n. 285 — Importo 29,40 EUR (già ridotto del 30%). Il pagamento entro 10 giorni non comporterà addebito delle spese di notifica."
+          </div>
+          <ul class="question-list" style="margin-top: 14px;">
             <li>È già una multa o solo un avviso?</li>
             <li>Deve pagare adesso o può aspettare?</li>
-            <li>Quanto paga se aspetta?</li>
             <li>Può contestarla?</li>
           </ul>
         </div>
 
-        <div class="outcome-box">
-          Giulia chiude la lettera e la mette in un cassetto.
-          <strong style="color: rgba(255,80,160,0.90);">Il termine scade senza che lei abbia fatto nulla.</strong>
-          <br /><br />
-          Ogni anno milioni di italiani perdono scadenze, pagano sanzioni evitabili
-          e accumulano stress inutile — non perché non sappiano leggere, ma perché
-          il linguaggio burocratico è progettato per i giuristi.
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ═══════════════════════════════════════════════════════════ -->
-<!-- 3. COME FUNZIONA — pipeline di agenti                        -->
-<!-- ═══════════════════════════════════════════════════════════ -->
-<section id="pipeline">
-  <div class="container">
-    <span class="section-label">Come funziona</span>
-    <h2>5 agenti AI in sequenza</h2>
-    <p style="margin-top: 10px; color: var(--text-muted); max-width: 600px;">
-      Ogni agente ha un compito preciso. Il documento entra in cima alla catena
-      e ne esce trasformato, verificato, spiegato.
-    </p>
-
-    <div class="pipeline-flow">
-      <div class="agent-step">
-        <div class="agent-icon c1">🔍</div>
-        <div class="agent-name">Classifier</div>
-        <div class="agent-desc">Riconosce il tipo di documento e la lingua di partenza</div>
-      </div>
-
-      <div class="agent-step">
-        <div class="agent-icon c2">✍️</div>
-        <div class="agent-name">Simplifier</div>
-        <div class="agent-desc">Riscrive il testo in italiano semplice livello B1, preservando ogni numero</div>
-      </div>
-
-      <div class="agent-step">
-        <div class="agent-icon c3">📋</div>
-        <div class="agent-name">Action Agent</div>
-        <div class="agent-desc">Estrae le azioni da fare, con scadenze e priorità ordinate</div>
-      </div>
-
-      <div class="agent-step">
-        <div class="agent-icon c4">🛡️</div>
-        <div class="agent-name">Safety Agent</div>
-        <div class="agent-desc">Verifica che importi e date nell'output siano identici all'originale</div>
-      </div>
-
-      <div class="agent-step">
-        <div class="agent-icon c5">📖</div>
-        <div class="agent-name">Glossary Agent</div>
-        <div class="agent-desc">Spiega i termini tecnici e giuridici con parole di tutti i giorni</div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ═══════════════════════════════════════════════════════════ -->
-<!-- 4. PRIMA / DOPO                                              -->
-<!-- ═══════════════════════════════════════════════════════════ -->
-<section id="prima-dopo">
-  <div class="container">
-    <span class="section-label">Risultato concreto</span>
-    <h2>Prima / Dopo</h2>
-    <p class="pd-sub">Stesso documento. Due mondi diversi.</p>
-
-    <div class="pd-columns">
-      <!-- PRIMA -->
-      <div class="pd-before">
-        <div class="pd-before-label">Prima — quello che vede Giulia</div>
-        <div class="pd-before-text">
-          art. 158, comma 2, D.Lgs. 30.4.1992,<br />
-          n. 285 (Codice della Strada)<br />
-          <br />
-          Importo 29,40 EUR (già ridotto del 30%).<br />
-          <br />
-          Il pagamento effettuato entro 10 giorni<br />
-          dalla data della violazione non comporterà<br />
-          addebito delle spese di notifica.<br />
-          <br />
-          Numero Atto: PL263562067
-        </div>
-        <div class="pd-before-note">
-          Giulia non sa se è una multa definitiva, se può contestarla,
-          quanto tempo ha e cosa succede se non paga.
-        </div>
-      </div>
-
-      <!-- DOPO -->
-      <div class="pd-after">
-        <div class="pd-after-label">Dopo — quello che mostra EasyRead</div>
-
-        <div class="pd-section-title">Cosa dice il documento</div>
-        <div class="pd-body">
-          Il Comune di Roma ha rilevato una violazione del Codice della Strada
-          con la tua auto (targa DS712CD) il 28 luglio 2026, in Viale Regina
-          Margherita 72. Devi pagare
-          <span class="highlight-amount">29,40&nbsp;€</span>
-          — l'importo è già ridotto del 30%. Se paghi
-          <span class="highlight-date">entro il 7 agosto 2026</span>,
-          non paghi le spese di notifica aggiuntive.
-        </div>
-
-        <div class="pd-section-title" style="margin-top: 22px;">Cosa devi fare</div>
-        <ul class="action-list">
-          <li class="action-item">
-            <span class="action-priority urgent"></span>
-            <span>Paga <strong>29,40&nbsp;€</strong> entro il <strong>7 agosto 2026</strong> tramite pagoPA, in banca o alla posta. — <em style="color: rgba(255,77,77,0.80);">Urgente</em></span>
-          </li>
-          <li class="action-item">
-            <span class="action-priority optional"></span>
-            <span>Se pensi che la multa sia sbagliata, puoi presentare ricorso. Rivolgiti a un patronato o a uno sportello del Comune. — <em style="color: rgba(255,184,0,0.80);">Se necessario</em></span>
-          </li>
-        </ul>
-
-        <div class="safety-badge">Cifre e date verificate automaticamente — identiche all'originale</div>
-      </div>
-    </div>
-
-    <!-- Glossario -->
-    <h3 style="margin-bottom: 6px; font-size: 0.80rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-muted);">Parole difficili spiegate</h3>
-    <div class="glossary-list">
-      <div class="glossary-item">
-        <div class="glossary-term">Preavviso di accertamento</div>
-        <div class="glossary-def">È un avviso che precede la multa definitiva. Significa che l'infrazione è stata rilevata ma non ancora notificata ufficialmente.</div>
-      </div>
-      <div class="glossary-item">
-        <div class="glossary-term">art. 158 CdS</div>
-        <div class="glossary-def">È la norma del Codice della Strada che vieta la sosta in determinati luoghi.</div>
-      </div>
-      <div class="glossary-item">
-        <div class="glossary-term">pagoPA</div>
-        <div class="glossary-def">Sistema di pagamento ufficiale della pubblica amministrazione italiana. Puoi usarlo online, in banca o in tabaccheria.</div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ═══════════════════════════════════════════════════════════ -->
-<!-- 5. AUTONOMIA & LIMITI                                        -->
-<!-- ═══════════════════════════════════════════════════════════ -->
-<section id="limiti">
-  <div class="container">
-    <span class="section-label">Autonomia &amp; Limiti</span>
-    <h2 style="margin-bottom: 36px;">Cosa funziona e cosa no (ancora)</h2>
-
-    <div class="grid-2" style="align-items: start;">
-      <!-- Cosa riesce a fare -->
-      <div>
+        <!-- Ahmed -->
         <div class="card">
-          <h3 style="margin-bottom: 14px; color: #00D87A;">Cosa Giulia riesce a fare adesso da sola</h3>
-          <ul class="check-list">
-            <li>Capisce immediatamente se deve pagare e quanto</li>
-            <li>Sa entro quando farlo e come (pagoPA, banca, posta)</li>
-            <li>Distingue "devo agire subito" da "posso contestare"</li>
-            <li>Identifica i termini tecnici grazie al glossario integrato</li>
-          </ul>
-        </div>
-
-        <div class="eye-box" style="margin-top: 20px;">
-          <div class="eye-box-title">Dove abbiamo tenuto un occhio umano</div>
-          <ul class="eye-list">
-            <li>I prompt del Simplifier e dell'Action Agent sono stati scritti e rivisti manualmente dal team</li>
-            <li>Il Safety Agent segnala automaticamente se un importo o una data cambia tra originale e output, ma la verifica finale spetta all'utente</li>
-            <li>I documenti di esempio usati per i test sono fac-simile ufficiali con dati fittizi — nessun dato personale reale</li>
+          <div class="persona-avatar">👨</div>
+          <h3 style="margin-bottom: 10px;">Ahmed, 38 anni — operaio, in Italia da 3 anni</h3>
+          <p style="font-size:0.90rem; color: rgba(255,255,255,0.65); margin-bottom: 4px;">
+            Riceve una <strong>bolletta della luce</strong> da Enel con un importo insolito.
+          </p>
+          <div class="blockquote">
+            "Conguaglio consumi pregressi: 87,42 EUR. Fascia F1: kWh 342 × 0,23641. Corrispettivo di dispacciamento: 12,08 EUR. IVA 10% su componenti imponibili."
+          </div>
+          <ul class="question-list" style="margin-top: 14px;">
+            <li>Devo pagare o mi rimborsano?</li>
+            <li>Cos'è il "conguaglio"?</li>
+            <li>Perché l'importo è diverso dal solito?</li>
           </ul>
         </div>
       </div>
 
-      <!-- Tabella limiti -->
-      <div class="card" style="padding: 24px;">
-        <h3 style="margin-bottom: 4px; color: rgba(255,255,255,0.70);">Limiti che restano</h3>
-        <table class="limits-table">
-          <thead>
-            <tr>
-              <th>Limite</th>
-              <th>Dettaglio</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>Solo testo leggibile</td>
-              <td>Non funziona con foto di documenti o scansioni sfocate — manca il supporto OCR</td>
-            </tr>
-            <tr>
-              <td>Spiega, non accompagna</td>
-              <td>Dice cosa fare, ma non guida l'utente passo per passo nell'eseguirlo (es. nel flusso pagoPA)</td>
-            </tr>
-            <tr>
-              <td>Casi ambigui non gestiti</td>
-              <td>Se il documento contiene errori dell'ente o informazioni contraddittorie, l'output potrebbe essere incompleto</td>
-            </tr>
-            <tr>
-              <td>Tipi di documento limitati</td>
-              <td>Copre i formati più comuni (Agenzia delle Entrate, INPS, Comune, bollette, multe) ma non tutti i documenti della PA</td>
-            </tr>
-          </tbody>
-        </table>
+      <div class="outcome-box" style="margin-top: 20px;">
+        Giulia mette la lettera in un cassetto. Ahmed paga per paura di sbagliare.
+        <strong style="color: rgba(255,80,160,0.90);">Entrambi perdono tempo, denaro o diritti — non per ignoranza, ma per un linguaggio progettato per giuristi e tecnici.</strong>
+        <br /><br />
+        EasyRead traduce e spiega qualsiasi documento nella lingua di chi lo riceve.
       </div>
     </div>
-  </div>
-</section>
+  </section>
 
-<!-- ═══════════════════════════════════════════════════════════ -->
-<!-- 6. PITCH / WRAP-UP                                           -->
-<!-- ═══════════════════════════════════════════════════════════ -->
-<section id="pitch">
-  <div class="container">
-    <span class="section-label">Pitch</span>
-    <h2 style="margin-bottom: 36px;">In breve</h2>
-
-    <div class="pitch-grid">
-      <!-- Problema -->
-      <div class="pitch-card">
-        <h3>Il problema</h3>
-        <p>
-          Ogni anno milioni di italiani ricevono lettere dalla pubblica
-          amministrazione che non riescono a leggere. Non perché non sappiano
-          leggere — ma perché il linguaggio burocratico è progettato per i
-          giuristi, non per le persone.
-          <br /><br />
-          Il risultato: scadenze perse, sanzioni evitabili, stress inutile.
-        </p>
-      </div>
-
-      <!-- Soluzione -->
-      <div class="pitch-card">
-        <h3>La soluzione</h3>
-        <p>EasyRead è una pipeline di 5 agenti AI specializzati che trasforma qualsiasi documento della PA in linguaggio semplice, estrae le azioni da compiere e verifica che nessun numero sia stato alterato.</p>
-        <br />
-        <p style="font-size: 0.82rem; color: var(--text-muted);">In 5 ore di sviluppo, abbiamo costruito uno strumento che:</p>
-        <ul style="margin-top: 10px;">
-          <li>riconosce il tipo di documento</li>
-          <li>lo riscrive in italiano semplice (o in 5 altre lingue)</li>
-          <li>dice esattamente cosa fare, entro quando e quanto pagare</li>
-          <li>controlla automaticamente che cifre e date siano identiche all'originale</li>
-          <li>spiega i termini tecnici con parole di tutti i giorni</li>
-        </ul>
-      </div>
-
-      <!-- Tecnologie -->
-      <div class="pitch-card">
-        <h3>Tecnologie</h3>
-        <ul class="tech-list">
-          <li class="tech-item">
-            <span class="tech-name">Claude API (Anthropic)</span>
-            <span>— 5 agenti specializzati orchestrati in sequenza</span>
-          </li>
-          <li class="tech-item">
-            <span class="tech-name">Streamlit</span>
-            <span>— interfaccia utente accessibile e semplice</span>
-          </li>
-          <li class="tech-item">
-            <span class="tech-name">Python / Pydantic</span>
-            <span>— orchestrazione e validazione dei dati</span>
-          </li>
-        </ul>
-      </div>
-
-      <!-- Team + Cosa manca -->
-      <div class="pitch-card">
-        <h3>Il team</h3>
-        <div class="team-placeholder">[Inserire nomi e ruoli]</div>
-
-        <br />
-        <h3 style="margin-top: 12px;">Cosa manca per andare in produzione</h3>
-        <ul style="margin-top: 10px;">
-          <li>Supporto OCR per documenti scansionati o fotografati</li>
-          <li>Integrazione diretta con pagoPA per il pagamento in-app</li>
-          <li>Copertura estesa a tutti i formati della PA italiana</li>
-        </ul>
-      </div>
-    </div>
-
-    <!-- Closing statement -->
-    <div class="closing">
-      <p class="closing-statement">
-        <span class="grad">Giulia adesso sa che deve pagare 29,40&nbsp;€ entro il 7 agosto tramite pagoPA.</span>
-        Sa che può contestare. Sa a chi rivolgersi.
+  <!-- 3. COME FUNZIONA — pipeline di agenti -->
+  <section id="pipeline">
+    <div class="container">
+      <span class="section-label">Come funziona</span>
+      <h2>5 agenti AI in sequenza</h2>
+      <p style="margin-top: 10px; color: var(--text-muted); max-width: 640px;">
+        Ogni agente ha un compito preciso. Il documento entra in cima alla catena
+        e ne esce tradotto nella lingua scelta dall'utente, semplificato, verificato, spiegato.
       </p>
-      <p class="closing-sub">Non ha dovuto leggere nessun articolo di legge.</p>
-    </div>
-  </div>
-</section>
 
-<!-- ═══════════════════════════════════════════════════════════ -->
-<!-- FOOTER                                                       -->
-<!-- ═══════════════════════════════════════════════════════════ -->
-<footer>
-  <div class="container">
-    EasyRead &nbsp;·&nbsp; Hagenthon 2026 &nbsp;·&nbsp; Tema 01 — Accessibilità Digitale
-  </div>
-</footer>
+      <div class="pipeline-flow">
+        <div class="agent-step">
+          <div class="agent-icon c1">🔍</div>
+          <div class="agent-name">Classifier</div>
+          <div class="agent-desc">Riconosce il tipo di documento e la lingua di partenza</div>
+        </div>
+
+        <div class="agent-step">
+          <div class="agent-icon c2">✍️</div>
+          <div class="agent-name">Simplifier</div>
+          <div class="agent-desc">Traduce e riscrive in linguaggio B1 nella lingua scelta dall'utente, preservando ogni numero</div>
+        </div>
+
+        <div class="agent-step">
+          <div class="agent-icon c3">📋</div>
+          <div class="agent-name">Action Agent</div>
+          <div class="agent-desc">Estrae le azioni da fare, con scadenze e priorità ordinate</div>
+        </div>
+
+        <div class="agent-step">
+          <div class="agent-icon c4">🛡️</div>
+          <div class="agent-name">Safety Agent</div>
+          <div class="agent-desc">Verifica che importi e date nell'output siano identici all'originale</div>
+        </div>
+
+        <div class="agent-step">
+          <div class="agent-icon c5">📖</div>
+          <div class="agent-name">Glossary Agent</div>
+          <div class="agent-desc">Spiega i termini tecnici e giuridici con parole di tutti i giorni</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. PRIMA / DOPO -->
+  <section id="prima-dopo">
+    <div class="container">
+      <span class="section-label">Risultato concreto</span>
+      <h2 style="margin-bottom: 8px;">Prima / Dopo</h2>
+      <p class="pd-sub">Stesso documento. Due mondi diversi.</p>
+
+      <!-- Tabs -->
+      <div class="pd-tabs">
+        <button class="pd-tab active" data-target="pd-multa">Multa — Giulia</button>
+        <button class="pd-tab" data-target="pd-bolletta">Bolletta — Ahmed</button>
+      </div>
+
+      <!-- ── Esempio 1: Multa ── -->
+      <div class="pd-example active" id="pd-multa">
+        <div class="pd-columns">
+          <div class="pd-before">
+            <div class="pd-before-label">Prima — quello che vede Giulia</div>
+            <div class="pd-before-text">
+              art. 158, comma 2, D.Lgs. 30.4.1992,<br />
+              n. 285 (Codice della Strada)<br />
+              <br />
+              Importo 29,40 EUR (già ridotto del 30%).<br />
+              <br />
+              Il pagamento effettuato entro 10 giorni<br />
+              dalla data della violazione non comporterà<br />
+              addebito delle spese di notifica.<br />
+              <br />
+              Numero Atto: PL263562067
+            </div>
+            <div class="pd-before-note">
+              "art. 158" non dice da nessuna parte cosa ha fatto di sbagliato.
+              Giulia non sa nemmeno di che infrazione si tratta — figuriamoci se deve pagare o contestare.
+            </div>
+          </div>
+
+          <div class="pd-after">
+            <div class="pd-after-label">Dopo — quello che mostra EasyRead</div>
+
+            <div class="pd-section-title">Cosa dice il documento</div>
+            <div class="pd-body">
+              Il 28 luglio 2026, la tua auto (targa DS712CD) era in
+              <strong>divieto di sosta</strong> in Viale Regina Margherita 72, Roma.
+              L'art. 158 del Codice della Strada vieta di fermarsi in quel tratto di strada.
+              Devi pagare
+              <span class="highlight-amount">29,40&nbsp;€</span>
+              — l'importo è già ridotto del 30%. Se paghi
+              <span class="highlight-date">entro il 7 agosto 2026</span>,
+              non paghi le spese di notifica aggiuntive.
+            </div>
+
+            <div class="pd-section-title" style="margin-top: 18px;">Cosa devi fare</div>
+            <ul class="action-list">
+              <li class="action-item">
+                <span class="action-priority urgent"></span>
+                <span>Paga <strong>29,40&nbsp;€</strong> entro il <strong>7 agosto 2026</strong> tramite pagoPA, in banca o alla posta. — <em style="color: rgba(255,77,77,0.80);">Urgente</em></span>
+              </li>
+              <li class="action-item">
+                <span class="action-priority optional"></span>
+                <span>Se pensi che la multa sia sbagliata, puoi presentare ricorso. Rivolgiti a un patronato o a uno sportello del Comune. — <em style="color: rgba(255,184,0,0.80);">Se necessario</em></span>
+              </li>
+            </ul>
+
+            <div class="safety-badge">Cifre e date verificate automaticamente — identiche all'originale</div>
+          </div>
+        </div>
+
+        <h3 style="margin-bottom: 6px; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-muted);">Parole difficili spiegate</h3>
+        <div class="glossary-list">
+          <div class="glossary-item">
+            <div class="glossary-term">Preavviso di accertamento</div>
+            <div class="glossary-def">È un avviso che precede la multa definitiva. Significa che l'infrazione è stata rilevata ma non ancora notificata ufficialmente.</div>
+          </div>
+          <div class="glossary-item">
+            <div class="glossary-term">art. 158 CdS</div>
+            <div class="glossary-def">È la norma del Codice della Strada che vieta la sosta in determinati luoghi.</div>
+          </div>
+          <div class="glossary-item">
+            <div class="glossary-term">pagoPA</div>
+            <div class="glossary-def">Sistema di pagamento ufficiale della pubblica amministrazione italiana. Puoi usarlo online, in banca o in tabaccheria.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Esempio 2: Bolletta ── -->
+      <div class="pd-example" id="pd-bolletta">
+        <div class="pd-columns">
+          <div class="pd-before">
+            <div class="pd-before-label">Prima — quello che vede Ahmed</div>
+            <div class="pd-before-text">
+              Conguaglio consumi pregressi: 87,42 EUR<br />
+              <br />
+              Fascia F1: kWh 342 × 0,23641 EUR/kWh<br />
+              Fascia F2: kWh 118 × 0,19874 EUR/kWh<br />
+              <br />
+              Corrispettivo di dispacciamento: 12,08 EUR<br />
+              Componente Asos: 8,34 EUR<br />
+              IVA 10% su componenti imponibili<br />
+              <br />
+              Totale fattura: 134,76 EUR
+            </div>
+            <div class="pd-before-note">
+              Ahmed non capisce se deve pagare di più del solito o meno, e perché.
+              Non sa cosa sia il "conguaglio", né le fasce F1/F2.
+            </div>
+          </div>
+
+          <div class="pd-after">
+            <div class="pd-after-label">Dopo — quello che mostra EasyRead</div>
+
+            <div class="pd-section-title">Cosa dice il documento</div>
+            <div class="pd-body">
+              Questa bolletta è più alta del solito perché Enel ha confrontato
+              i consumi reali degli ultimi mesi con le stime precedenti (<strong>conguaglio</strong>):
+              hai consumato più del previsto, quindi paghi la differenza di
+              <span class="highlight-amount">87,42&nbsp;€</span>.
+              Il totale da pagare è
+              <span class="highlight-amount">134,76&nbsp;€</span>
+              entro <span class="highlight-date">il 20 agosto 2026</span>.
+            </div>
+
+            <div class="pd-section-title" style="margin-top: 18px;">Cosa devi fare</div>
+            <ul class="action-list">
+              <li class="action-item">
+                <span class="action-priority urgent"></span>
+                <span>Paga <strong>134,76&nbsp;€</strong> entro il <strong>20 agosto 2026</strong> tramite pagoPA, in banca o alla posta. — <em style="color: rgba(255,77,77,0.80);">Urgente</em></span>
+              </li>
+              <li class="action-item">
+                <span class="action-priority optional"></span>
+                <span>Se pensi che il conguaglio sia sbagliato, chiedi la rilettura del contatore al tuo fornitore o rivolgiti a uno sportello del consumatore. — <em style="color: rgba(255,184,0,0.80);">Se necessario</em></span>
+              </li>
+            </ul>
+
+            <div class="safety-badge">Cifre e date verificate automaticamente — identiche all'originale</div>
+          </div>
+        </div>
+
+        <h3 style="margin-bottom: 6px; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-muted);">Parole difficili spiegate</h3>
+        <div class="glossary-list">
+          <div class="glossary-item">
+            <div class="glossary-term">Conguaglio</div>
+            <div class="glossary-def">Enel stima i consumi per mesi e poi li confronta con quelli reali. Se hai consumato di più, paghi la differenza; se di meno, ti rimborsa o scala dalla prossima bolletta.</div>
+          </div>
+          <div class="glossary-item">
+            <div class="glossary-term">Fascia F1 / F2</div>
+            <div class="glossary-def">Fasce orarie in cui usi la luce. F1 sono le ore di punta (es. mattina e pomeriggio nei giorni feriali) e costano di più. F2 sono le ore intermedie.</div>
+          </div>
+          <div class="glossary-item">
+            <div class="glossary-term">Dispacciamento</div>
+            <div class="glossary-def">Costo fisso per la gestione e il bilanciamento della rete elettrica nazionale. Lo pagano tutti i clienti.</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- 5. AUTONOMIA & LIMITI -->
+  <section id="limiti">
+    <div class="container">
+      <span class="section-label">Autonomia &amp; Limiti</span>
+      <h2 style="margin-bottom: 32px;">Cosa funziona e cosa no (ancora)</h2>
+
+      <div class="grid-2" style="align-items: start;">
+        <!-- Cosa riesce a fare -->
+        <div>
+          <div class="card">
+            <h3 style="margin-bottom: 14px; color: #00D87A;">Cosa Giulia riesce a fare adesso da sola</h3>
+            <ul class="check-list">
+              <li>Capisce immediatamente se deve pagare e quanto</li>
+              <li>Sa entro quando farlo e come (pagoPA, banca, posta)</li>
+              <li>Distingue "devo agire subito" da "posso contestare"</li>
+              <li>Sa a chi rivolgersi — CAF, patronato, sportello del Comune o del proprio fornitore</li>
+              <li>Identifica i termini tecnici grazie al glossario integrato</li>
+            </ul>
+          </div>
+
+          <div class="eye-box" style="margin-top: 20px;">
+            <div class="eye-box-title">Dove abbiamo tenuto un occhio umano</div>
+            <ul class="eye-list">
+              <li>I prompt del Simplifier e dell'Action Agent sono stati scritti e rivisti manualmente dal team</li>
+              <li>Il Safety Agent segnala automaticamente se un importo o una data cambia tra originale e output, ma la verifica finale spetta all'utente</li>
+              <li>I documenti di esempio usati per i test sono fac-simile ufficiali con dati fittizi — nessun dato personale reale</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Tabella limiti -->
+        <div class="card" style="padding: 24px;">
+          <h3 style="margin-bottom: 4px; color: rgba(255,255,255,0.70);">Limiti che restano</h3>
+          <table class="limits-table">
+            <thead>
+              <tr>
+                <th>Limite</th>
+                <th>Dettaglio</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Solo testo leggibile</td>
+                <td>Non funziona con foto di documenti o scansioni sfocate — manca il supporto OCR</td>
+              </tr>
+              <tr>
+                <td>Spiega, non accompagna</td>
+                <td>Dice cosa fare, ma non guida l'utente passo per passo nell'eseguirlo (es. nel flusso pagoPA)</td>
+              </tr>
+              <tr>
+                <td>Casi ambigui non gestiti</td>
+                <td>Se il documento contiene errori dell'ente o informazioni contraddittorie, l'output potrebbe essere incompleto</td>
+              </tr>
+              <tr>
+                <td>Tipi di documento limitati</td>
+                <td>Copre i formati più comuni (Agenzia delle Entrate, INPS, Comune, bollette, multe) ma non tutti i documenti della PA</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6. PITCH / WRAP-UP -->
+  <section id="pitch">
+    <div class="container">
+      <span class="section-label">Pitch</span>
+      <h2 style="margin-bottom: 28px;">In breve</h2>
+
+      <div class="pitch-grid">
+        <!-- Problema -->
+        <div class="pitch-card">
+          <h3>Il problema</h3>
+          <p>
+            Ogni anno milioni di italiani ricevono lettere dalla pubblica
+            amministrazione che non riescono a leggere. Non perché non sappiano
+            leggere — ma perché il linguaggio burocratico è progettato per i
+            giuristi, non per le persone.
+            <br /><br />
+            E anche quando si capisce che bisogna fare qualcosa, non si sa a chi rivolgersi:
+            alla posta? All'Agenzia delle Entrate? Al CAF? Al Comune?
+            La risposta sbagliata significa ore perse, code inutili — o peggio, non fare nulla.
+            <br /><br />
+            Il risultato: scadenze perse, sanzioni evitabili, stress inutile.
+          </p>
+        </div>
+
+        <!-- Soluzione -->
+        <div class="pitch-card">
+          <h3>La soluzione</h3>
+          <p>EasyRead è una pipeline di 5 agenti AI specializzati che trasforma qualsiasi documento della PA in linguaggio semplice, estrae le azioni da compiere e verifica che nessun numero sia stato alterato.</p>
+          <br />
+          <p style="font-size: 0.82rem; color: var(--text-muted);">In 5 ore di sviluppo, abbiamo costruito uno strumento che:</p>
+          <ul style="margin-top: 8px;">
+            <li>riconosce il tipo di documento</li>
+            <li>lo riscrive in italiano semplice (o in 5 altre lingue)</li>
+            <li>dice esattamente cosa fare, entro quando e quanto pagare</li>
+            <li>controlla automaticamente che cifre e date siano identiche all'originale</li>
+            <li>spiega i termini tecnici con parole di tutti i giorni</li>
+          </ul>
+        </div>
+
+        <!-- Tecnologie -->
+        <div class="pitch-card">
+          <h3>Tecnologie</h3>
+          <ul class="tech-list">
+            <li class="tech-item">
+              <span class="tech-name">Claude API (Anthropic)</span>
+              <span>— 5 agenti specializzati orchestrati in sequenza</span>
+            </li>
+            <li class="tech-item">
+              <span class="tech-name">Streamlit</span>
+              <span>— interfaccia utente accessibile e semplice</span>
+            </li>
+            <li class="tech-item">
+              <span class="tech-name">Python / Pydantic</span>
+              <span>— orchestrazione e validazione dei dati</span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Cosa manca -->
+        <div class="pitch-card">
+          <h3>Cosa manca per andare in produzione</h3>
+          <ul style="margin-top: 8px;">
+            <li>Supporto OCR per documenti scansionati o fotografati</li>
+            <li>Integrazione diretta con pagoPA per il pagamento in-app</li>
+            <li>Copertura estesa a tutti i formati della PA italiana</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Closing statement -->
+      <div class="closing">
+        <p class="closing-statement">
+          <span class="grad">Giulia adesso sa che deve pagare 29,40&nbsp;€ entro il 7 agosto tramite pagoPA.</span>
+          Sa che può contestare. Sa a chi rivolgersi.
+        </p>
+        <p class="closing-sub">Non ha dovuto leggere nessun articolo di legge.</p>
+      </div>
+
+      <div class="slide-footer">
+        EasyRead &nbsp;·&nbsp; Hagenthon 2026 &nbsp;·&nbsp; Tema 01 — Accessibilità Digitale
+      </div>
+    </div>
+  </section>
+
+</div><!-- /slides-wrapper -->
+
+<script>
+  const wrapper   = document.getElementById('slides-wrapper');
+  const sections  = Array.from(wrapper.querySelectorAll('section'));
+  const total     = sections.length;
+  const dotsEl    = document.getElementById('nav-dots');
+  const counterEl = document.getElementById('slide-counter');
+  const btnPrev   = document.getElementById('nav-prev');
+  const btnNext   = document.getElementById('nav-next');
+  let current = 0;
+
+  // Build dots
+  sections.forEach((_, i) => {
+    const dot = document.createElement('button');
+    dot.className = 'nav-dot';
+    dot.setAttribute('aria-label', `Vai alla slide ${i + 1}`);
+    dot.addEventListener('click', () => goTo(i));
+    dotsEl.appendChild(dot);
+  });
+
+  function updateUI() {
+    wrapper.style.transform = `translateX(-${current * 100}vw)`;
+
+    dotsEl.querySelectorAll('.nav-dot').forEach((d, i) => {
+      d.classList.toggle('active', i === current);
+    });
+
+    btnPrev.classList.toggle('hidden', current === 0);
+    btnNext.classList.toggle('hidden', current === total - 1);
+    counterEl.textContent = `${current + 1} / ${total}`;
+  }
+
+  function goTo(n) {
+    current = Math.max(0, Math.min(n, total - 1));
+    updateUI();
+  }
+
+  btnPrev.addEventListener('click', () => goTo(current - 1));
+  btnNext.addEventListener('click', () => goTo(current + 1));
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') {
+      e.preventDefault();
+      goTo(current + 1);
+    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      goTo(current - 1);
+    }
+  });
+
+  // Touch swipe
+  let touchStartX = 0;
+  wrapper.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; }, { passive: true });
+  wrapper.addEventListener('touchend', e => {
+    const dx = touchStartX - e.changedTouches[0].clientX;
+    if (Math.abs(dx) > 50) goTo(current + (dx > 0 ? 1 : -1));
+  });
+
+  updateUI();
+
+  // Prima/Dopo tabs
+  document.querySelectorAll('.pd-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.pd-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.pd-example').forEach(e => e.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById(tab.dataset.target).classList.add('active');
+    });
+  });
+</script>
 
 </body>
 </html>
