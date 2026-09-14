@@ -6,23 +6,26 @@ from pathlib import Path
 import streamlit as st
 from dotenv import load_dotenv
 
-RADICE = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(RADICE))
+QUI = Path(__file__).resolve().parent
+RADICE = QUI.parent
+sys.path.insert(0, str(QUI))
 load_dotenv(RADICE / ".env", override=True)
 
-from agents.models import (
+from pipeline.models import (
     Action,
     ActionResult,
     ClassifierResult,
     DocumentType,
     EasyReadResult,
+    GlossaryResult,
+    GlossaryTerm,
     SafetyCheck,
 )
 
 CARTELLA_ESEMPI = Path(__file__).parent / "samples"
 
 ESEMPI = {
-    "Anomalia sui redditi": "anomalia_redditi.pdf",
+    "Anomalia sui redditi": "anomalia_redditi.txt",
     "Dichiarazione integrativa": "integrativa_altri_redditi.pdf",
 }
 
@@ -39,6 +42,15 @@ PRIORITA = {
     1: ("🔴", "Urgente"),
     2: ("🟡", "Da fare"),
     3: ("🟢", "Se vuoi"),
+}
+
+LINGUE = {
+    "🇮🇹  Italiano": "italiano",
+    "🇬🇧  English": "inglese",
+    "🇫🇷  Français": "francese",
+    "🇪🇸  Español": "spagnolo",
+    "🇷🇴  Română": "rumeno",
+    "🇸🇦  العربية": "arabo",
 }
 
 
@@ -79,6 +91,13 @@ def testo_da_pdf(percorso_o_file) -> str:
     from pypdf import PdfReader
 
     return "\n".join(p.extract_text() or "" for p in PdfReader(percorso_o_file).pages)
+
+
+def carica_esempio(nome_file: str) -> str:
+    percorso = CARTELLA_ESEMPI / nome_file
+    if percorso.suffix == ".txt":
+        return percorso.read_text(encoding="utf-8")
+    return testo_da_pdf(percorso)
 
 
 def risultato_finto() -> EasyReadResult:
@@ -133,14 +152,30 @@ def risultato_finto() -> EasyReadResult:
             dates_original=["31/10/2026"],
             dates_output=["31 ottobre 2026"],
         ),
+        glossary=GlossaryResult(
+            terms=[
+                GlossaryTerm(
+                    term="modello F24",
+                    definition="È un foglio che si usa per pagare le tasse allo Stato. Puoi compilarlo in banca, alla posta o online.",
+                ),
+                GlossaryTerm(
+                    term="canale CIVIS",
+                    definition="È un servizio online dell'Agenzia delle Entrate. Ti permette di inviare documenti e chiedere chiarimenti senza andare allo sportello.",
+                ),
+                GlossaryTerm(
+                    term="CAF",
+                    definition="Centro di Assistenza Fiscale. È un ufficio dove persone esperte ti aiutano con le pratiche fiscali, spesso gratuitamente.",
+                ),
+            ]
+        ),
     )
 
 
 @st.cache_data(show_spinner=False)
-def analizza_davvero(testo: str) -> EasyReadResult:
-    from agents import Orchestrator
+def analizza_davvero(testo: str, lingua: str) -> EasyReadResult:
+    from pipeline import Orchestrator
 
-    return Orchestrator().process(testo)
+    return Orchestrator().process(testo, lingua)
 
 
 def mostra_risultato(r: EasyReadResult) -> None:
@@ -175,6 +210,12 @@ def mostra_risultato(r: EasyReadResult) -> None:
                 if azione.amount:
                     dettagli.append(f"💶 {azione.amount}")
                 st.caption("  ·  ".join(dettagli))
+
+    if r.glossary.terms:
+        st.subheader("Parole difficili spiegate")
+        for voce in r.glossary.terms:
+            with st.expander(voce.term):
+                st.write(voce.definition)
 
     st.subheader("Abbiamo controllato i numeri")
     if r.safety.verified and not r.safety.warnings:
@@ -259,11 +300,19 @@ elif scelta == "Scrivi o incolla il testo":
 else:
     for etichetta, nome_file in ESEMPI.items():
         if st.button(etichetta, use_container_width=True):
-            st.session_state.testo = testo_da_pdf(CARTELLA_ESEMPI / nome_file)
+            st.session_state.testo = carica_esempio(nome_file)
     if st.session_state.testo:
         st.caption(f"Documento pronto: {len(st.session_state.testo)} caratteri.")
 
 st.divider()
+
+lingua = LINGUE[
+    st.selectbox(
+        "In che lingua vuoi la spiegazione?",
+        list(LINGUE),
+        help="Il documento resta in italiano. Cambia solo la lingua della spiegazione.",
+    )
+]
 
 if st.button(
     "Spiegamelo",
@@ -282,6 +331,6 @@ if st.button(
     else:
         with st.spinner("Sto leggendo il documento. Ci vogliono alcuni minuti."):
             try:
-                mostra_risultato(analizza_davvero(st.session_state.testo))
+                mostra_risultato(analizza_davvero(st.session_state.testo, lingua))
             except Exception as errore:
                 st.error(f"Non sono riuscito a leggere il documento: {errore}")

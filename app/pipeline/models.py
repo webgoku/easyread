@@ -43,9 +43,19 @@ class SafetyCheck(BaseModel):
     dates_output: list[str]
 
 
+class GlossaryTerm(BaseModel):
+    term: str = Field(description="Il termine tecnico esatto come appare nel testo")
+    definition: str = Field(description="Spiegazione breve in parole semplici")
+
+
+class GlossaryResult(BaseModel):
+    terms: list[GlossaryTerm] = Field(description="Lista dei termini tecnici trovati, vuota se nessuno")
+
+
 class EasyReadResult(BaseModel):
     original_text: str
     classifier: ClassifierResult
     simplified_text: str
     actions: ActionResult
     safety: SafetyCheck
+    glossary: GlossaryResult
