@@ -207,6 +207,20 @@ button[data-testid="baseButton-secondary"]:hover,
 }
 .blocco-semplice p { margin-bottom: 0.9rem; }
 
+/* Alert scadenza */
+.alert-scadenza {
+    display: flex; align-items: flex-start; gap: 14px;
+    padding: 16px 20px; border-radius: 14px; margin: 12px 0 20px;
+}
+.alert-scadenza .icona { font-size: 1.8rem; flex-shrink: 0; line-height: 1; }
+.alert-scadenza .testo strong {
+    display: block; font-size: 1.05rem; font-weight: 700; margin-bottom: 3px;
+}
+.alert-scadenza .testo p { margin: 0; font-size: 0.95rem; opacity: 0.9; }
+.alert-scaduta  { background: #FEF2F2; border-left: 5px solid #EF4444; color: #991B1B; }
+.alert-urgente  { background: #FFF7ED; border-left: 5px solid #F97316; color: #9A3412; }
+.alert-vicina   { background: #FEFCE8; border-left: 5px solid #EAB308; color: #854D0E; }
+
 /* Testo base */
 html, body, [class*="css"] { font-size: 18px; }
 .main p, .main li { font-size: 1.05rem; line-height: 1.75; }
@@ -248,7 +262,102 @@ def analizza_davvero(testo: str, lingua: str, on_step=None) -> EasyReadResult:
     return Orchestrator().process(testo, lingua, on_step=on_step)
 
 
+def trascrivi_immagine(file) -> str:
+    """Invia la foto a Claude Vision e restituisce il testo trascritto."""
+    import anthropic, base64
+    dati = base64.standard_b64encode(file.read()).decode("utf-8")
+    media_type = file.type  # "image/jpeg", "image/png", ecc.
+    client = anthropic.Anthropic()
+    msg = client.messages.create(
+        model="claude-haiku-4-5",
+        max_tokens=4096,
+        messages=[{
+            "role": "user",
+            "content": [
+                {
+                    "type": "image",
+                    "source": {"type": "base64", "media_type": media_type, "data": dati},
+                },
+                {
+                    "type": "text",
+                    "text": (
+                        "Trascrivi fedelmente tutto il testo visibile in questa immagine, "
+                        "mantenendo la struttura originale (titoli, paragrafi, elenchi). "
+                        "Rispondi solo con il testo trascritto, senza commenti o spiegazioni."
+                    ),
+                },
+            ],
+        }],
+    )
+    return msg.content[0].text
+
+
 import re as _re
+from datetime import date as _date, datetime as _datetime
+
+_MESI_IT = {
+    "gennaio": 1, "febbraio": 2, "marzo": 3, "aprile": 4,
+    "maggio": 5, "giugno": 6, "luglio": 7, "agosto": 8,
+    "settembre": 9, "ottobre": 10, "novembre": 11, "dicembre": 12,
+}
+
+def _parse_deadline(testo: str) -> _date | None:
+    """Converte una stringa data in formato italiano in un oggetto date."""
+    t = testo.strip()
+    # gg/mm/aaaa  o  gg-mm-aaaa
+    m = _re.match(r"^(\d{1,2})[/\-](\d{1,2})[/\-](\d{4})$", t)
+    if m:
+        try:
+            return _date(int(m.group(3)), int(m.group(2)), int(m.group(1)))
+        except ValueError:
+            pass
+    # gg mese aaaa  (es. "31 ottobre 2026")
+    m = _re.match(r"^(\d{1,2})\s+([a-zà-ù]+)\s+(\d{4})$", t.lower())
+    if m:
+        mese = _MESI_IT.get(m.group(2))
+        if mese:
+            try:
+                return _date(int(m.group(3)), mese, int(m.group(1)))
+            except ValueError:
+                pass
+    return None
+
+
+def _mostra_alert_scadenza(deadlines: list[str]) -> None:
+    """Mostra un banner colorato se la scadenza è vicina o già passata."""
+    oggi = _date.today()
+    for testo_data in deadlines:
+        dt = _parse_deadline(testo_data)
+        if dt is None:
+            continue
+        delta = (dt - oggi).days
+        if delta < 0:
+            html = (
+                f'<div class="alert-scadenza alert-scaduta">'
+                f'<span class="icona">🚨</span>'
+                f'<div class="testo"><strong>Scadenza superata</strong>'
+                f'<p>La scadenza del {testo_data} è già passata da {abs(delta)} giorn{"o" if abs(delta)==1 else "i"}. '
+                f'Contatta subito un CAF o un patronato.</p></div></div>'
+            )
+        elif delta <= 7:
+            html = (
+                f'<div class="alert-scadenza alert-urgente">'
+                f'<span class="icona">⚠️</span>'
+                f'<div class="testo"><strong>Scadenza urgente — {delta} giorn{"o" if delta==1 else "i"} rimast{"o" if delta==1 else "i"}</strong>'
+                f'<p>Devi agire entro il {testo_data}. Non aspettare.</p></div></div>'
+            )
+        elif delta <= 30:
+            html = (
+                f'<div class="alert-scadenza alert-vicina">'
+                f'<span class="icona">📅</span>'
+                f'<div class="testo"><strong>Scadenza vicina — {delta} giorni rimasti</strong>'
+                f'<p>Hai tempo fino al {testo_data}. Organizzati per tempo.</p></div></div>'
+            )
+        else:
+            continue
+        st.markdown(html, unsafe_allow_html=True)
+        break  # mostra solo la prima scadenza con alert
+
 
 def _md_to_html(testo: str) -> str:
     """Converte markdown bold in HTML e normalizza i paragrafi."""
@@ -273,6 +382,8 @@ def _md_to_html(testo: str) -> str:
 def mostra_risultato(r: EasyReadResult) -> None:
     icona = ICONE_TIPO.get(r.classifier.document_type, "📄")
     st.caption(f"{icona}  {r.classifier.type_label}")
+
+    _mostra_alert_scadenza(r.actions.deadlines)
 
     # Riepilogo cifre in evidenza, in base allo stato del pagamento
     status = r.actions.payment_status
@@ -373,7 +484,7 @@ for _k, _v in [
     ("vista", "input"),
     ("risultato", None),
     ("testo", ""),
-    ("scelta_tipo", "pdf"),
+    ("scelta_tipo", "pdf"),  # valori: "pdf" | "foto" | "testo"
     ("lingua_analisi", "italiano"),
 ]:
     if _k not in st.session_state:
@@ -440,7 +551,7 @@ if st.session_state.vista == "input":
     # ── Selezione tipo input ─────────────────────────────────
     st.markdown('<p class="sezione-label">Come vuoi darci il documento?</p>', unsafe_allow_html=True)
 
-    c1, c2 = st.columns(2, gap="small")
+    c1, c2, c3 = st.columns(3, gap="small")
     with c1:
         if st.button(
             "📄  Carica PDF",
@@ -451,6 +562,15 @@ if st.session_state.vista == "input":
             st.session_state.scelta_tipo = "pdf"
             st.rerun()
     with c2:
+        if st.button(
+            "📷  Carica foto",
+            type="primary" if st.session_state.scelta_tipo == "foto" else "secondary",
+            use_container_width=True,
+            key="btn_foto",
+        ):
+            st.session_state.scelta_tipo = "foto"
+            st.rerun()
+    with c3:
         if st.button(
             "✏️  Incolla testo",
             type="primary" if st.session_state.scelta_tipo == "testo" else "secondary",
@@ -474,6 +594,17 @@ if st.session_state.vista == "input":
         if caricato:
             st.session_state.testo = testo_da_pdf(caricato)
             st.success(f"Documento caricato: {len(st.session_state.testo):,} caratteri.")
+
+    elif scelta == "foto":
+        foto = st.file_uploader(
+            "Carica una foto del documento (JPG, PNG, WEBP)",
+            type=["jpg", "jpeg", "png", "webp"],
+            label_visibility="visible",
+        )
+        if foto:
+            with st.spinner("Leggo il testo dalla foto…"):
+                st.session_state.testo = trascrivi_immagine(foto)
+            st.success(f"Foto letta: {len(st.session_state.testo):,} caratteri trascritti.")
 
     elif scelta == "testo":
         st.session_state.testo = st.text_area(
