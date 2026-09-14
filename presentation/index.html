@@ -1047,7 +1047,8 @@
         Giulia mette la lettera in un cassetto. Ahmed paga per paura di sbagliare.
         <strong style="color: rgba(255,80,160,0.90);">Entrambi perdono tempo, denaro o diritti — non per ignoranza, ma per un linguaggio progettato per giuristi e tecnici.</strong>
         <br /><br />
-        EasyRead traduce e spiega qualsiasi documento nella lingua di chi lo riceve.
+        Con una semplice foto dallo smartphone, EasyRead legge il documento, lo traduce
+        e spiega di cosa si tratta nella lingua di chi lo riceve.
       </div>
     </div>
   </section>
@@ -1295,8 +1296,8 @@
             </thead>
             <tbody>
               <tr>
-                <td>Solo testo leggibile</td>
-                <td>Non funziona con foto di documenti o scansioni sfocate — manca il supporto OCR</td>
+                <td>Foto di bassa qualità</td>
+                <td>La trascrizione via Claude Vision funziona bene su foto nitide; scansioni molto sfocate o storte possono perdere dettagli</td>
               </tr>
               <tr>
                 <td>Spiega, non accompagna</td>
@@ -1379,9 +1380,9 @@
         <div class="pitch-card">
           <h3>Cosa manca per andare in produzione</h3>
           <ul style="margin-top: 8px;">
-            <li>Supporto OCR per documenti scansionati o fotografati</li>
             <li>Integrazione diretta con pagoPA per il pagamento in-app</li>
             <li>Copertura estesa a tutti i formati della PA italiana</li>
+            <li>Gestione dei casi ambigui o dei documenti con errori dell'ente</li>
           </ul>
         </div>
 
@@ -1420,6 +1421,7 @@
         <!-- Input -->
         <div class="arch-row">
           <div class="arch-chip">📄 PDF</div>
+          <div class="arch-chip">📷 Foto</div>
           <div class="arch-chip">✏️ Testo</div>
           <div class="arch-chip">🌐 Lingua (6)</div>
         </div>
@@ -1428,7 +1430,7 @@
         <!-- Streamlit -->
         <div class="arch-node full">
           <div class="n-title">Interfaccia — Streamlit</div>
-          <div class="n-sub">Estrazione testo (pypdf) &nbsp;·&nbsp; cache dei risultati (@st.cache_data)</div>
+          <div class="n-sub">Estrazione testo (pypdf) &nbsp;·&nbsp; trascrizione foto (Claude Vision) &nbsp;·&nbsp; cache dei risultati (@st.cache_data)</div>
         </div>
         <div class="arch-arrow-down">&#8595;</div>
 
