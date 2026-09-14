@@ -218,14 +218,14 @@ def risultato_finto() -> EasyReadResult:
             type_label="Comunicazione di irregolarità — Agenzia delle Entrate",
         ),
         simplified_text=(
-            "L'Agenzia delle Entrate ha controllato la tua dichiarazione dei redditi "
-            "del 2024 e ha trovato una differenza.\n\n"
-            "Tu hai dichiarato 28.450,00 euro di stipendio. Al tuo datore di lavoro "
-            "però risultano 31.200,00 euro. Mancano quindi 2.750,00 euro.\n\n"
-            "Per questo motivo devi pagare 644,92 euro in più. Questa cifra comprende "
-            "l'imposta non pagata, una sanzione cioè una multa, e gli interessi.\n\n"
-            "Se pensi che ci sia un errore, puoi mandare i tuoi documenti e spiegare "
-            "la tua situazione. Non sei obbligato a pagare subito."
+            "L'Agenzia delle Entrate ha confrontato la tua dichiarazione dei redditi "
+            "del 2024 con i dati del tuo datore di lavoro e ha trovato una differenza.\n\n"
+            "Dalla tua dichiarazione risultano 28.450,00 euro di stipendio, ma il datore "
+            "di lavoro ne ha comunicati 31.200,00. La differenza è di 2.750,00 euro.\n\n"
+            "Per questa differenza ti viene chiesto di versare 644,92 euro, che includono "
+            "l'imposta non pagata, una sanzione e gli interessi di mora.\n\n"
+            "Se ritieni che ci sia un errore, hai la possibilità di inviare i tuoi documenti "
+            "giustificativi tramite il servizio CIVIS. Non sei obbligato a pagare immediatamente."
         ),
         actions=ActionResult(
             actions=[
@@ -236,13 +236,13 @@ def risultato_finto() -> EasyReadResult:
                     priority=1,
                 ),
                 Action(
-                    description="Se pensi che l'importo sia sbagliato, manda i tuoi documenti tramite il canale CIVIS sul sito dell'Agenzia.",
+                    description="Se pensi che l'importo sia sbagliato, invia i tuoi documenti tramite il servizio CIVIS sul sito dell'Agenzia delle Entrate.",
                     deadline="31 ottobre 2026",
                     amount=None,
                     priority=2,
                 ),
                 Action(
-                    description="Fatti aiutare da un CAF o da un patronato: il servizio è gratuito.",
+                    description="Rivolgiti a un CAF o a un patronato per ricevere assistenza gratuita.",
                     deadline=None,
                     amount=None,
                     priority=3,
@@ -250,6 +250,7 @@ def risultato_finto() -> EasyReadResult:
             ],
             deadlines=["31 ottobre 2026"],
             amounts=["644,92 €", "578,00 €", "57,80 €", "9,12 €", "2.750,00 €"],
+            payment_status="da_pagare",
         ),
         safety=SafetyCheck(
             verified=True,
@@ -263,15 +264,15 @@ def risultato_finto() -> EasyReadResult:
             terms=[
                 GlossaryTerm(
                     term="modello F24",
-                    definition="È un foglio che si usa per pagare le tasse allo Stato. Puoi compilarlo in banca, alla posta o online.",
+                    definition="È un modulo per pagare le imposte allo Stato. Si compila in banca, alla posta o online sul sito dell'Agenzia delle Entrate.",
                 ),
                 GlossaryTerm(
-                    term="canale CIVIS",
-                    definition="È un servizio online dell'Agenzia delle Entrate. Ti permette di inviare documenti e chiedere chiarimenti senza andare allo sportello.",
+                    term="CIVIS",
+                    definition="Servizio online dell'Agenzia delle Entrate per inviare documenti e richiedere chiarimenti senza recarsi allo sportello.",
                 ),
                 GlossaryTerm(
                     term="CAF",
-                    definition="Centro di Assistenza Fiscale. È un ufficio dove persone esperte ti aiutano con le pratiche fiscali, spesso gratuitamente.",
+                    definition="Centro di Assistenza Fiscale. Offre supporto gratuito per le pratiche fiscali e la compilazione delle dichiarazioni.",
                 ),
             ]
         ),
@@ -284,16 +285,60 @@ def analizza_davvero(testo: str, lingua: str) -> EasyReadResult:
     return Orchestrator().process(testo, lingua)
 
 
+import re as _re
+
+def _md_to_html(testo: str) -> str:
+    """Converte markdown bold in HTML e normalizza i paragrafi."""
+    paragrafi = []
+    for par in testo.split("\n\n"):
+        par = par.strip()
+        if not par:
+            continue
+        # **Titolo** su riga singola → titoletto in grassetto
+        if _re.match(r"^\*\*.+\*\*$", par):
+            contenuto = par.strip("*")
+            paragrafi.append(f"<p><strong>{contenuto}</strong></p>")
+        else:
+            # **testo** inline → <strong>
+            par = _re.sub(r"\*\*(.*?)\*\*", r"<strong>\1</strong>", par)
+            # newline singoli → <br>
+            par = par.replace("\n", "<br>")
+            paragrafi.append(f"<p>{par}</p>")
+    return "".join(paragrafi)
+
+
 def mostra_risultato(r: EasyReadResult) -> None:
     icona = ICONE_TIPO.get(r.classifier.document_type, "📄")
     st.caption(f"{icona}  {r.classifier.type_label}")
 
-    if r.actions.amounts or r.actions.deadlines:
+    # Riepilogo cifre in evidenza, in base allo stato del pagamento
+    status = r.actions.payment_status
+    importo = r.actions.amounts[0] if r.actions.amounts else None
+    scadenza = r.actions.deadlines[0] if r.actions.deadlines else None
+
+    if status == "gia_pagato":
+        msg = f"Hai già pagato {importo}." if importo else "Il pagamento risulta già effettuato."
+        st.success(f"**Pagamento già effettuato** — {msg} Non devi fare nulla.", icon="✅")
+        if scadenza:
+            st.metric("Data scadenza", scadenza)
+    elif status == "parzialmente_pagato":
         col_a, col_b, col_c = st.columns([1, 1, 2])
-        if r.actions.amounts:
-            col_a.metric("Importo principale", r.actions.amounts[0])
-        if r.actions.deadlines:
-            col_b.metric("Prima scadenza", r.actions.deadlines[0])
+        if importo:
+            col_a.metric("Saldo residuo", importo)
+        if scadenza:
+            col_b.metric("Entro il", scadenza)
+    elif status == "da_pagare":
+        col_a, col_b, col_c = st.columns([1, 1, 2])
+        if importo:
+            col_a.metric("Da versare", importo)
+        if scadenza:
+            col_b.metric("Entro il", scadenza)
+    elif r.actions.amounts or r.actions.deadlines:
+        col_a, col_b, col_c = st.columns([1, 1, 2])
+        if importo:
+            col_a.metric("Importo principale", importo)
+        if scadenza:
+            col_b.metric("Prima scadenza", scadenza)
 
     st.divider()
 
@@ -301,12 +346,10 @@ def mostra_risultato(r: EasyReadResult) -> None:
 
     with col_sx:
         st.subheader("Cosa dice questo documento")
-        corpo = "".join(
-            f"<p>{par.strip()}</p>"
-            for par in r.simplified_text.split("\n\n")
-            if par.strip()
+        st.markdown(
+            f'<div class="blocco-semplice">{_md_to_html(r.simplified_text)}</div>',
+            unsafe_allow_html=True,
         )
-        st.markdown(f'<div class="blocco-semplice">{corpo}</div>', unsafe_allow_html=True)
 
     with col_dx:
         if r.actions.actions:
@@ -331,8 +374,8 @@ def mostra_risultato(r: EasyReadResult) -> None:
 
     st.info(
         "**Questo strumento spiega soltanto cosa c'è scritto nel documento. "
-        "Non dà consigli fiscali o legali.**\n\n"
-        "Per decidere cosa fare, rivolgiti a un CAF, a un patronato o a un "
+        "Non fornisce consigli fiscali o legali.**\n\n"
+        "Per qualsiasi decisione, rivolgiti a un CAF, a un patronato o a un "
         "commercialista. Molti di questi servizi sono gratuiti.",
         icon="ℹ️",
     )
@@ -596,9 +639,8 @@ elif st.session_state.vista == "risultati" and st.session_state.risultato:
     """, unsafe_allow_html=True)
     if st.session_state.analisi_finta:
         st.warning(
-            "**Stai vedendo un risultato finto.** È un esempio fisso scritto nel codice: "
-            "non ha letto il tuo documento. Per analizzarlo davvero, spegni "
-            "**Modalità sviluppo** nella barra a sinistra.",
+            "**Stai vedendo un risultato di esempio.** Il documento non è stato analizzato. "
+            "Per l'analisi reale, disattiva la **Modalità sviluppo** nella barra a sinistra.",
             icon="🧪",
         )
     mostra_risultato(st.session_state.risultato)

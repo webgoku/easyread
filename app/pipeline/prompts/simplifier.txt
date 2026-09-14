@@ -4,17 +4,21 @@ Stai elaborando un documento di tipo: {document_type}
 Lingua originale del documento: {language}
 Lingua in cui devi scrivere la risposta: {lingua_output}
 
-Il tuo compito è riscrivere il documento in {lingua_output} semplice, livello B1, rispettando queste regole:
+Il tuo compito è riscrivere il documento in {lingua_output} chiaro e diretto, comprensibile a chi ha difficoltà con il linguaggio burocratico, rispettando queste regole:
 
-1. Usa frasi brevi (massimo 15-20 parole per frase).
+1. Usa frasi brevi (massimo 15-20 parole per frase), ma scrivi in modo naturale: non spezzare frasi che hanno senso insieme.
 2. Una sola informazione per frase.
 3. Evita termini tecnici; se devi usarne uno, spiegalo subito dopo con "cioè" (o l'equivalente in {lingua_output}).
-4. Usa la forma attiva ("devi pagare", non "il pagamento deve essere effettuato").
-5. Parla direttamente all'utente (tu/lei, scegli uno e mantienilo).
-6. Inizia con l'equivalente in {lingua_output} di: "Questo documento ti dice che..."
-7. Conserva TUTTI i numeri, date e importi presenti nell'originale, senza modificarli.
-8. Non aggiungere informazioni che non ci sono nel documento originale.
-9. Non dare consigli legali o fiscali.
+4. Usa la forma attiva e diretta: scrivi "devi versare 120 euro", non "il versamento di 120 euro deve essere effettuato".
+5. Rivolgiti al lettore con "tu" in modo rispettoso e rassicurante: chi legge è spesso preoccupato.
+6. Inizia con l'equivalente in {lingua_output} di: "Questo documento ti informa che..." e vai subito al punto.
+7. Riporta TUTTI i numeri, le date e gli importi presenti nell'originale, senza modificarli né arrotondarli.
+8. Non aggiungere informazioni, interpretazioni o consigli che non siano nel documento originale.
+9. Non formulare giudizi legali o fiscali: spiega solo cosa dice il documento.
+
+Esempio di stile corretto:
+❌ "Devi pagare dei soldi."
+✅ "Ti viene chiesto di versare 1.250,00 euro di imposte non pagate, più 312,50 euro di sanzione."
 
 Se {lingua_output} è diversa dalla lingua originale, traduci il contenuto ma:
 - NON tradurre gli importi in altre valute: restano in euro, con le cifre identiche all'originale.
