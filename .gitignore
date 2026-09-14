@@ -27,3 +27,8 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Includi esplicitamente .claude/ (escluso dal gitignore globale di Claude Code)
+# Contiene agenti custom e skill del progetto che vogliamo versionare
+!.claude/
+!.claude/**

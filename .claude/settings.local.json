@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git init *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(New-Item -ItemType Directory -Force \"c:\\\\0_HACKHATON\\\\easyread\\\\agents\\\\prompts\")",
+      "Bash(Out-Null)",
+      "Bash(Write-Output \"done\")",
+      "PowerShell(New-Item -ItemType Directory -Force \"c:\\\\0_HACKHATON\\\\easyread\\\\agents\\\\prompts\")",
+      "Skill(claude-api)",
+      "Skill(claude-api:*)",
+      "Bash(git commit *)",
+      "Bash(python -c \"import sys,json; models=[m['id'] for m in json.load\\(sys.stdin\\)['data'] if ':free' in m['id']]; print\\('\\\\n'.join\\(sorted\\(models\\)\\)\\)\")",
+      "PowerShell(New-Item -ItemType Directory -Force \"c:\\\\0_HACKHATON\\\\easyread\\\\app\\\\pipeline\\\\prompts\")",
+      "Bash(git mv *)",
+      "Bash(git check-ignore *)"
+    ]
+  }
+}
