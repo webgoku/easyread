@@ -84,14 +84,21 @@ st.markdown(
         padding: 20px 24px; border-radius: 10px; margin: 8px 0 20px;
     }
     .blocco-semplice p { margin-bottom: 0.9rem; }
+    .blocco-semplice strong { color: #4c1d95; }
 
     /* Metriche evidenziate */
     [data-testid="stMetric"] {
-        background: #faf5ff; border-radius: 12px;
-        padding: 16px 20px; border: 1px solid #e9d5ff;
+        background: #4c1d95; border-radius: 12px;
+        padding: 20px 24px; border: none;
     }
-    [data-testid="stMetricLabel"] { font-size: 0.85rem !important; color: #6b7280; }
-    [data-testid="stMetricValue"] { font-size: 1.5rem !important; font-weight: 700; color: #4c1d95; }
+    [data-testid="stMetricLabel"] { font-size: 1rem !important; color: #d8b4fe !important; font-weight: 500; }
+    [data-testid="stMetricValue"] { font-size: 2rem !important; font-weight: 800; color: #ffffff !important; }
+
+    /* Sezione azioni in evidenza */
+    .blocco-azioni {
+        background: #fffbeb; border-left: 5px solid #f59e0b;
+        padding: 4px 0; border-radius: 10px; margin: 4px 0;
+    }
 
     /* Card azioni */
     [data-testid="stVerticalBlock"] > [data-testid="stVerticalBlock"] {
@@ -168,6 +175,7 @@ def risultato_finto() -> EasyReadResult:
             ],
             deadlines=["31 ottobre 2026"],
             amounts=["644,92 €", "578,00 €", "57,80 €", "9,12 €", "2.750,00 €"],
+            payment_status="da_pagare",
         ),
         safety=SafetyCheck(
             verified=True,
@@ -203,29 +211,64 @@ def analizza_davvero(testo: str, lingua: str) -> EasyReadResult:
     return Orchestrator().process(testo, lingua)
 
 
+import re as _re
+
+def _md_to_html(testo: str) -> str:
+    """Converte markdown bold in HTML e normalizza i paragrafi."""
+    paragrafi = []
+    for par in testo.split("\n\n"):
+        par = par.strip()
+        if not par:
+            continue
+        # **Titolo** su riga singola → titoletto in grassetto
+        if _re.match(r"^\*\*.+\*\*$", par):
+            contenuto = par.strip("*")
+            paragrafi.append(f"<p><strong>{contenuto}</strong></p>")
+        else:
+            # **testo** inline → <strong>
+            par = _re.sub(r"\*\*(.*?)\*\*", r"<strong>\1</strong>", par)
+            # newline singoli → <br>
+            par = par.replace("\n", "<br>")
+            paragrafi.append(f"<p>{par}</p>")
+    return "".join(paragrafi)
+
+
 def mostra_risultato(r: EasyReadResult) -> None:
     icona = ICONE_TIPO.get(r.classifier.document_type, "📄")
     st.caption(f"{icona}  {r.classifier.type_label}")
 
     # Riepilogo cifre in evidenza
-    if r.actions.amounts or r.actions.deadlines:
-        a, b = st.columns(2)
-        if r.actions.amounts:
-            a.metric("Da versare", r.actions.amounts[0])
-        if r.actions.deadlines:
-            b.metric("Entro il", r.actions.deadlines[0])
-        st.write("")
+    status = r.actions.payment_status
+    importo = r.actions.amounts[0] if r.actions.amounts else None
+    scadenza = r.actions.deadlines[0] if r.actions.deadlines else None
 
-    st.subheader("Di cosa si tratta")
-    corpo = "".join(
-        f"<p>{par.strip()}</p>"
-        for par in r.simplified_text.split("\n\n")
-        if par.strip()
-    )
-    st.markdown(f'<div class="blocco-semplice">{corpo}</div>', unsafe_allow_html=True)
+    if status == "gia_pagato":
+        msg = f"Hai già pagato {importo}." if importo else "Il pagamento risulta già effettuato."
+        st.success(f"**Pagamento già effettuato** — {msg} Non devi fare nulla.", icon="✅")
+        if scadenza:
+            st.metric("Data scadenza", scadenza)
+        st.write("")
+    elif status == "parzialmente_pagato":
+        cols = st.columns(2)
+        if importo:
+            cols[0].metric("Saldo residuo", importo)
+        if scadenza:
+            cols[1].metric("Entro il", scadenza)
+        st.write("")
+    elif status == "da_pagare":
+        cols = st.columns(2)
+        if importo:
+            cols[0].metric("Da versare", importo)
+        if scadenza:
+            cols[1].metric("Entro il", scadenza)
+        st.write("")
+    elif r.actions.deadlines:
+        st.metric("Entro il", scadenza)
+        st.write("")
 
     if r.actions.actions:
         st.subheader("Cosa fare")
+        st.markdown('<div class="blocco-azioni">', unsafe_allow_html=True)
         ordinate = sorted(r.actions.actions, key=lambda x: x.priority)
         for i, azione in enumerate(ordinate, 1):
             pallino, etichetta = PRIORITA.get(azione.priority, ("⚪", ""))
@@ -237,6 +280,14 @@ def mostra_risultato(r: EasyReadResult) -> None:
                 if azione.amount:
                     dettagli.append(f"💶 {azione.amount}")
                 st.caption("  ·  ".join(dettagli))
+        st.markdown("</div>", unsafe_allow_html=True)
+        st.write("")
+
+    st.subheader("Di cosa si tratta")
+    st.markdown(
+        f'<div class="blocco-semplice">{_md_to_html(r.simplified_text)}</div>',
+        unsafe_allow_html=True,
+    )
 
     if r.glossary.terms:
         st.subheader("Parole difficili spiegate")

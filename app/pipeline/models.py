@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Optional
+from typing import Literal, Optional
 from pydantic import BaseModel, Field
 
 
@@ -32,6 +32,16 @@ class ActionResult(BaseModel):
     actions: list[Action]
     deadlines: list[str] = Field(description="Tutte le scadenze trovate nel documento")
     amounts: list[str] = Field(description="Tutti gli importi trovati nel documento")
+    payment_status: Literal["da_pagare", "gia_pagato", "parzialmente_pagato", "non_applicabile"] = Field(
+        default="non_applicabile",
+        description=(
+            "Stato del pagamento: "
+            "'da_pagare' se c'è ancora qualcosa da versare; "
+            "'gia_pagato' se il documento conferma che il pagamento è già avvenuto; "
+            "'parzialmente_pagato' se una parte è stata versata e resta un saldo; "
+            "'non_applicabile' se il documento non riguarda un pagamento."
+        ),
+    )
 
 
 class SafetyCheck(BaseModel):
