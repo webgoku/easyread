@@ -1,18 +1,18 @@
 """
 Script di test rapido per provare la pipeline degli agenti in locale.
-Esegui dalla ROOT del progetto (non da dentro agents/):
+Esegui dalla ROOT del progetto:
 
     cd c:/0_HACKHATON/easyread
-    python -m agents.test_pipeline
+    python -m app.pipeline.test_pipeline
 """
 import sys
 import os
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from dotenv import load_dotenv
-load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
+load_dotenv(os.path.join(os.path.dirname(__file__), "..", "..", ".env"))
 
-from agents import Orchestrator
+from app.pipeline import Orchestrator
 
 DOCUMENTO_ESEMPIO = """
 Agenzia delle Entrate - Riscossione
