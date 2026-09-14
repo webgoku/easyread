@@ -1,15 +1,18 @@
 """
 Script di test rapido per provare la pipeline degli agenti in locale.
-Esegui dalla root del progetto:
+Esegui dalla ROOT del progetto (non da dentro agents/):
 
-    cd agents
-    pip install -r requirements.txt
-    python test_pipeline.py
+    cd c:/0_HACKHATON/easyread
+    python -m agents.test_pipeline
 """
-from dotenv import load_dotenv
-load_dotenv("../.env")  # carica OPENROUTER_API_KEY dal file .env
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from orchestrator import Orchestrator
+from dotenv import load_dotenv
+load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
+
+from agents import Orchestrator
 
 DOCUMENTO_ESEMPIO = """
 Agenzia delle Entrate - Riscossione
