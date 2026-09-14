@@ -60,6 +60,7 @@ st.markdown(
     """<style>
     html, body, [class*="css"] { font-size: 18px; }
     .main p, .main li { font-size: 1.05rem; line-height: 1.75; }
+
     .intestazione { text-align: center; padding: 16px 0 4px; }
     .intestazione .marchio {
         font-size: 3.6rem; font-weight: 800; letter-spacing: -0.03em;
@@ -77,11 +78,35 @@ st.markdown(
         font-size: 1.05rem; color: #6b7280; max-width: 460px;
         margin: 0 auto; line-height: 1.65;
     }
+
     .blocco-semplice {
         background: #f7f4ff; border-left: 5px solid #7c3aed;
         padding: 20px 24px; border-radius: 10px; margin: 8px 0 20px;
     }
     .blocco-semplice p { margin-bottom: 0.9rem; }
+
+    /* Metriche evidenziate */
+    [data-testid="stMetric"] {
+        background: #faf5ff; border-radius: 12px;
+        padding: 16px 20px; border: 1px solid #e9d5ff;
+    }
+    [data-testid="stMetricLabel"] { font-size: 0.85rem !important; color: #6b7280; }
+    [data-testid="stMetricValue"] { font-size: 1.5rem !important; font-weight: 700; color: #4c1d95; }
+
+    /* Card azioni */
+    [data-testid="stVerticalBlock"] > [data-testid="stVerticalBlock"] {
+        border-radius: 10px;
+    }
+
+    /* Bottone nuovo documento */
+    .nuovo-doc { text-align: right; margin-bottom: 8px; }
+
+    /* Responsive: compatta su schermi piccoli */
+    @media (max-width: 640px) {
+        .intestazione .marchio { font-size: 2.6rem; }
+        .intestazione .domanda { font-size: 1.2rem; }
+        [data-testid="stMetricValue"] { font-size: 1.2rem !important; }
+    }
     </style>""",
     unsafe_allow_html=True,
 )
@@ -111,14 +136,14 @@ def risultato_finto() -> EasyReadResult:
             type_label="Comunicazione di irregolarità — Agenzia delle Entrate",
         ),
         simplified_text=(
-            "L'Agenzia delle Entrate ha controllato la tua dichiarazione dei redditi "
-            "del 2024 e ha trovato una differenza.\n\n"
-            "Tu hai dichiarato 28.450,00 euro di stipendio. Al tuo datore di lavoro "
-            "però risultano 31.200,00 euro. Mancano quindi 2.750,00 euro.\n\n"
-            "Per questo motivo devi pagare 644,92 euro in più. Questa cifra comprende "
-            "l'imposta non pagata, una sanzione cioè una multa, e gli interessi.\n\n"
-            "Se pensi che ci sia un errore, puoi mandare i tuoi documenti e spiegare "
-            "la tua situazione. Non sei obbligato a pagare subito."
+            "L'Agenzia delle Entrate ha confrontato la tua dichiarazione dei redditi "
+            "del 2024 con i dati del tuo datore di lavoro e ha trovato una differenza.\n\n"
+            "Dalla tua dichiarazione risultano 28.450,00 euro di stipendio, ma il datore "
+            "di lavoro ne ha comunicati 31.200,00. La differenza è di 2.750,00 euro.\n\n"
+            "Per questa differenza ti viene chiesto di versare 644,92 euro, che includono "
+            "l'imposta non pagata, una sanzione e gli interessi di mora.\n\n"
+            "Se ritieni che ci sia un errore, hai la possibilità di inviare i tuoi documenti "
+            "giustificativi tramite il servizio CIVIS. Non sei obbligato a pagare immediatamente."
         ),
         actions=ActionResult(
             actions=[
@@ -129,13 +154,13 @@ def risultato_finto() -> EasyReadResult:
                     priority=1,
                 ),
                 Action(
-                    description="Se pensi che l'importo sia sbagliato, manda i tuoi documenti tramite il canale CIVIS sul sito dell'Agenzia.",
+                    description="Se pensi che l'importo sia sbagliato, invia i tuoi documenti tramite il servizio CIVIS sul sito dell'Agenzia delle Entrate.",
                     deadline="31 ottobre 2026",
                     amount=None,
                     priority=2,
                 ),
                 Action(
-                    description="Fatti aiutare da un CAF o da un patronato: il servizio è gratuito.",
+                    description="Rivolgiti a un CAF o a un patronato per ricevere assistenza gratuita.",
                     deadline=None,
                     amount=None,
                     priority=3,
@@ -156,15 +181,15 @@ def risultato_finto() -> EasyReadResult:
             terms=[
                 GlossaryTerm(
                     term="modello F24",
-                    definition="È un foglio che si usa per pagare le tasse allo Stato. Puoi compilarlo in banca, alla posta o online.",
+                    definition="È un modulo per pagare le imposte allo Stato. Si compila in banca, alla posta o online sul sito dell'Agenzia delle Entrate.",
                 ),
                 GlossaryTerm(
-                    term="canale CIVIS",
-                    definition="È un servizio online dell'Agenzia delle Entrate. Ti permette di inviare documenti e chiedere chiarimenti senza andare allo sportello.",
+                    term="CIVIS",
+                    definition="Servizio online dell'Agenzia delle Entrate per inviare documenti e richiedere chiarimenti senza recarsi allo sportello.",
                 ),
                 GlossaryTerm(
                     term="CAF",
-                    definition="Centro di Assistenza Fiscale. È un ufficio dove persone esperte ti aiutano con le pratiche fiscali, spesso gratuitamente.",
+                    definition="Centro di Assistenza Fiscale. Offre supporto gratuito per le pratiche fiscali e la compilazione delle dichiarazioni.",
                 ),
             ]
         ),
@@ -182,7 +207,16 @@ def mostra_risultato(r: EasyReadResult) -> None:
     icona = ICONE_TIPO.get(r.classifier.document_type, "📄")
     st.caption(f"{icona}  {r.classifier.type_label}")
 
-    st.subheader("Cosa dice questo documento")
+    # Riepilogo cifre in evidenza
+    if r.actions.amounts or r.actions.deadlines:
+        a, b = st.columns(2)
+        if r.actions.amounts:
+            a.metric("Da versare", r.actions.amounts[0])
+        if r.actions.deadlines:
+            b.metric("Entro il", r.actions.deadlines[0])
+        st.write("")
+
+    st.subheader("Di cosa si tratta")
     corpo = "".join(
         f"<p>{par.strip()}</p>"
         for par in r.simplified_text.split("\n\n")
@@ -190,15 +224,8 @@ def mostra_risultato(r: EasyReadResult) -> None:
     )
     st.markdown(f'<div class="blocco-semplice">{corpo}</div>', unsafe_allow_html=True)
 
-    if r.actions.amounts or r.actions.deadlines:
-        a, b = st.columns(2)
-        if r.actions.amounts:
-            a.metric("Importo principale", r.actions.amounts[0])
-        if r.actions.deadlines:
-            b.metric("Prima scadenza", r.actions.deadlines[0])
-
     if r.actions.actions:
-        st.subheader("Cosa devi fare")
+        st.subheader("Cosa fare")
         ordinate = sorted(r.actions.actions, key=lambda x: x.priority)
         for i, azione in enumerate(ordinate, 1):
             pallino, etichetta = PRIORITA.get(azione.priority, ("⚪", ""))
@@ -217,37 +244,16 @@ def mostra_risultato(r: EasyReadResult) -> None:
             with st.expander(voce.term):
                 st.write(voce.definition)
 
-    st.subheader("Abbiamo controllato i numeri")
-    if r.safety.verified and not r.safety.warnings:
-        st.success(
-            "Le cifre e le date qui sopra sono le stesse del documento originale. "
-            "Non abbiamo cambiato nulla."
-        )
-    else:
-        st.error(
-            "Attenzione: alcune cifre o date potrebbero non corrispondere. "
-            "Controlla sempre il documento originale."
-        )
-    for avviso in r.safety.warnings:
-        st.warning(avviso)
-
-    with st.expander("Vedi il confronto con l'originale"):
-        a, b = st.columns(2)
-        a.markdown("**Nel documento originale**")
-        a.write(r.safety.amounts_original or "nessun importo")
-        a.write(r.safety.dates_original or "nessuna data")
-        b.markdown("**Nella nostra spiegazione**")
-        b.write(r.safety.amounts_output or "nessun importo")
-        b.write(r.safety.dates_output or "nessuna data")
-
     st.info(
         "**Questo strumento spiega soltanto cosa c'è scritto nel documento. "
-        "Non dà consigli fiscali o legali.**\n\n"
-        "Per decidere cosa fare, rivolgiti a un CAF, a un patronato o a un "
+        "Non fornisce consigli fiscali o legali.**\n\n"
+        "Per qualsiasi decisione, rivolgiti a un CAF, a un patronato o a un "
         "commercialista. Molti di questi servizi sono gratuiti.",
         icon="ℹ️",
     )
 
+
+# ── Intestazione ──────────────────────────────────────────────────────────────
 
 st.markdown(
     """<div class="intestazione">
@@ -275,62 +281,85 @@ with st.sidebar:
 
 st.divider()
 
+# ── Session state ──────────────────────────────────────────────────────────────
+
 if "testo" not in st.session_state:
     st.session_state.testo = ""
+if "risultato" not in st.session_state:
+    st.session_state.risultato = None
 
-scelta = st.radio(
-    "Come vuoi darci il documento?",
-    ["Carica un PDF", "Scrivi o incolla il testo", "Usa un esempio"],
-    horizontal=True,
-)
+# ── Form di input (nascosta dopo l'analisi) ───────────────────────────────────
 
-if scelta == "Carica un PDF":
-    caricato = st.file_uploader("Scegli il file", type="pdf")
-    if caricato:
-        st.session_state.testo = testo_da_pdf(caricato)
-        st.success(f"Documento letto: {len(st.session_state.testo)} caratteri.")
-
-elif scelta == "Scrivi o incolla il testo":
-    st.session_state.testo = st.text_area(
-        "Copia qui il testo della lettera",
-        value=st.session_state.testo,
-        height=220,
-    )
-
+if st.session_state.risultato is not None:
+    col1, col2 = st.columns([4, 1])
+    col1.caption(f"📄 Documento analizzato · {len(st.session_state.testo)} caratteri")
+    if col2.button("Nuovo documento", use_container_width=True):
+        st.session_state.risultato = None
+        st.session_state.testo = ""
+        st.rerun()
 else:
-    for etichetta, nome_file in ESEMPI.items():
-        if st.button(etichetta, use_container_width=True):
-            st.session_state.testo = carica_esempio(nome_file)
-    if st.session_state.testo:
-        st.caption(f"Documento pronto: {len(st.session_state.testo)} caratteri.")
-
-st.divider()
-
-lingua = LINGUE[
-    st.selectbox(
-        "In che lingua vuoi la spiegazione?",
-        list(LINGUE),
-        help="Il documento resta in italiano. Cambia solo la lingua della spiegazione.",
+    scelta = st.radio(
+        "Come vuoi darci il documento?",
+        ["Carica un PDF", "Scrivi o incolla il testo", "Usa un esempio"],
+        horizontal=True,
     )
-]
 
-if st.button(
-    "Spiegamelo",
-    type="primary",
-    use_container_width=True,
-    disabled=not st.session_state.testo.strip(),
-):
+    if scelta == "Carica un PDF":
+        caricato = st.file_uploader("Scegli il file", type="pdf")
+        if caricato:
+            st.session_state.testo = testo_da_pdf(caricato)
+            st.success(f"Documento letto: {len(st.session_state.testo)} caratteri.")
+
+    elif scelta == "Scrivi o incolla il testo":
+        st.session_state.testo = st.text_area(
+            "Copia qui il testo della lettera",
+            value=st.session_state.testo,
+            height=220,
+        )
+
+    else:
+        for etichetta, nome_file in ESEMPI.items():
+            if st.button(etichetta, use_container_width=True):
+                st.session_state.testo = carica_esempio(nome_file)
+        if st.session_state.testo:
+            st.caption(f"Documento pronto: {len(st.session_state.testo)} caratteri.")
+
+    st.divider()
+
+    lingua = LINGUE[
+        st.selectbox(
+            "In che lingua vuoi la spiegazione?",
+            list(LINGUE),
+            help="Il documento resta in italiano. Cambia solo la lingua della spiegazione.",
+        )
+    ]
+
+    if st.button(
+        "Spiegamelo",
+        type="primary",
+        use_container_width=True,
+        disabled=not st.session_state.testo.strip(),
+    ):
+        if usa_finto:
+            st.session_state.risultato = risultato_finto()
+            st.rerun()
+        else:
+            with st.spinner("Sto leggendo il documento. Ci vogliono alcuni minuti."):
+                try:
+                    st.session_state.risultato = analizza_davvero(
+                        st.session_state.testo, lingua
+                    )
+                    st.rerun()
+                except Exception as errore:
+                    st.error(f"Non sono riuscito a leggere il documento: {errore}")
+
+# ── Risultato ─────────────────────────────────────────────────────────────────
+
+if st.session_state.risultato is not None:
     if usa_finto:
         st.warning(
-            "**Stai vedendo un risultato finto.** È un esempio fisso scritto nel codice: "
-            "non ha letto il tuo documento. Per analizzarlo davvero, spegni "
-            "**Modalità sviluppo** nella barra a sinistra.",
+            "**Stai vedendo un risultato di esempio.** Il documento non è stato analizzato. "
+            "Per l'analisi reale, disattiva la **Modalità sviluppo** nella barra a sinistra.",
             icon="🧪",
         )
-        mostra_risultato(risultato_finto())
-    else:
-        with st.spinner("Sto leggendo il documento. Ci vogliono alcuni minuti."):
-            try:
-                mostra_risultato(analizza_davvero(st.session_state.testo, lingua))
-            except Exception as errore:
-                st.error(f"Non sono riuscito a leggere il documento: {errore}")
+    mostra_risultato(st.session_state.risultato)
