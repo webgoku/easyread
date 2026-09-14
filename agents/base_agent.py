@@ -25,7 +25,7 @@ def _extract_json(text: str) -> str:
 
 class BaseAgent:
     def __init__(self, model: str | None = None):
-        self.model = model or os.getenv("ANTHROPIC_MODEL", "claude-haiku-4-5-20251001")
+        self.model = model or os.getenv("ANTHROPIC_MODEL", "claude-haiku-4-5")
         self.client = anthropic.Anthropic(
             api_key=os.environ["ANTHROPIC_API_KEY"],
         )
