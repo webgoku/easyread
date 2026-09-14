@@ -11,23 +11,8 @@ RADICE = QUI.parent
 sys.path.insert(0, str(QUI))
 load_dotenv(RADICE / ".env", override=True)
 
-from pipeline.models import (
-    Action,
-    ActionResult,
-    ClassifierResult,
-    DocumentType,
-    EasyReadResult,
-    GlossaryResult,
-    GlossaryTerm,
-    SafetyCheck,
-)
+from pipeline.models import DocumentType, EasyReadResult
 
-CARTELLA_ESEMPI = Path(__file__).parent / "samples"
-
-ESEMPI = {
-    "Anomalia sui redditi": "anomalia_redditi.txt",
-    "Dichiarazione integrativa": "integrativa_altri_redditi.pdf",
-}
 
 ICONE_TIPO = {
     DocumentType.AGENZIA_ENTRATE: "🏛️",
@@ -54,20 +39,38 @@ LINGUE = {
 }
 
 
-st.set_page_config(page_title="EasyRead", page_icon="📄", layout="wide")
+st.set_page_config(
+    page_title="EasyRead",
+    page_icon="📄",
+    layout="wide",
+    initial_sidebar_state="collapsed",
+    menu_items={},
+)
 
 # ── CSS globale ──────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
-/* Chrome Streamlit */
+/* Nasconde elementi Streamlit non necessari */
 #MainMenu { visibility: hidden; }
 footer { visibility: hidden; }
-[data-testid="stHeader"]    { display: none; }
-[data-testid="stToolbar"]   { display: none; }
-[data-testid="stDecoration"]{ display: none; }
+[data-testid="stDecoration"]  { display: none; }
+[data-testid="stDeployButton"]{ display: none; }
+[data-testid="stHeader"] { background: transparent !important; border-bottom: none !important; }
+/* Sidebar e toggle nascosti — nessuna opzione da mostrare */
+[data-testid="stSidebar"]       { display: none !important; }
+[data-testid="collapsedControl"]{ display: none !important; }
 
 /* Sfondo pagina */
 .stApp { background: #F0EDF8; }
+
+/* Fade-in della card al caricamento */
+@keyframes fadeSlideIn {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+.block-container {
+    animation: fadeSlideIn 0.35s ease-out;
+}
 
 /* Pulsante primary → viola (sovrascrive il rosso di Streamlit) */
 button[data-testid="baseButton-primary"],
@@ -176,6 +179,24 @@ button[data-testid="baseButton-secondary"]:hover,
     margin-top: 4px;
 }
 
+/* Metriche evidenziate */
+[data-testid="stMetric"] {
+    background: #4C1D95;
+    border-radius: 14px;
+    padding: 20px 24px;
+    border: none;
+}
+[data-testid="stMetricLabel"] {
+    font-size: 1rem !important;
+    color: #DDD6FE !important;
+    font-weight: 500 !important;
+}
+[data-testid="stMetricValue"] {
+    font-size: 2rem !important;
+    font-weight: 800 !important;
+    color: #FFFFFF !important;
+}
+
 /* Blocco risultati */
 .blocco-semplice {
     background: #F7F4FF;
@@ -193,6 +214,26 @@ html, body, [class*="css"] { font-size: 18px; }
 """, unsafe_allow_html=True)
 
 
+# ── Footer fisso ─────────────────────────────────────────────────────────────
+st.markdown("""
+<style>
+.easyread-footer {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    text-align: center;
+    padding: 8px 0;
+    font-size: 0.75rem;
+    color: #9CA3AF;
+    background: transparent;
+    z-index: 100;
+    pointer-events: none;
+}
+</style>
+<div class="easyread-footer">
+    EasyRead v1.0 &nbsp;·&nbsp; Hagenthon 2026 — Tema 01 Accessibilità Digitale &nbsp;·&nbsp; © 2026
+</div>
+""", unsafe_allow_html=True)
+
 # ── Funzioni (logica invariata) ──────────────────────────────────────────────
 
 def testo_da_pdf(percorso_o_file) -> str:
@@ -200,89 +241,11 @@ def testo_da_pdf(percorso_o_file) -> str:
     return "\n".join(p.extract_text() or "" for p in PdfReader(percorso_o_file).pages)
 
 
-def carica_esempio(nome_file: str) -> str:
-    percorso = CARTELLA_ESEMPI / nome_file
-    if percorso.suffix == ".txt":
-        return percorso.read_text(encoding="utf-8")
-    return testo_da_pdf(percorso)
 
 
-def risultato_finto() -> EasyReadResult:
-    """Esempio realistico usato per sviluppare la UI senza chiamare l'LLM."""
-    return EasyReadResult(
-        original_text="(testo originale del documento)",
-        classifier=ClassifierResult(
-            document_type=DocumentType.AGENZIA_ENTRATE,
-            language="it",
-            confidence=0.96,
-            type_label="Comunicazione di irregolarità — Agenzia delle Entrate",
-        ),
-        simplified_text=(
-            "L'Agenzia delle Entrate ha confrontato la tua dichiarazione dei redditi "
-            "del 2024 con i dati del tuo datore di lavoro e ha trovato una differenza.\n\n"
-            "Dalla tua dichiarazione risultano 28.450,00 euro di stipendio, ma il datore "
-            "di lavoro ne ha comunicati 31.200,00. La differenza è di 2.750,00 euro.\n\n"
-            "Per questa differenza ti viene chiesto di versare 644,92 euro, che includono "
-            "l'imposta non pagata, una sanzione e gli interessi di mora.\n\n"
-            "Se ritieni che ci sia un errore, hai la possibilità di inviare i tuoi documenti "
-            "giustificativi tramite il servizio CIVIS. Non sei obbligato a pagare immediatamente."
-        ),
-        actions=ActionResult(
-            actions=[
-                Action(
-                    description="Paga 644,92 euro con il modello F24. Puoi farlo in banca, alla posta o dal tabaccaio.",
-                    deadline="31 ottobre 2026",
-                    amount="644,92 €",
-                    priority=1,
-                ),
-                Action(
-                    description="Se pensi che l'importo sia sbagliato, invia i tuoi documenti tramite il servizio CIVIS sul sito dell'Agenzia delle Entrate.",
-                    deadline="31 ottobre 2026",
-                    amount=None,
-                    priority=2,
-                ),
-                Action(
-                    description="Rivolgiti a un CAF o a un patronato per ricevere assistenza gratuita.",
-                    deadline=None,
-                    amount=None,
-                    priority=3,
-                ),
-            ],
-            deadlines=["31 ottobre 2026"],
-            amounts=["644,92 €", "578,00 €", "57,80 €", "9,12 €", "2.750,00 €"],
-            payment_status="da_pagare",
-        ),
-        safety=SafetyCheck(
-            verified=True,
-            warnings=[],
-            amounts_original=["644,92", "578,00", "57,80", "9,12", "2.750,00"],
-            amounts_output=["644,92", "578,00", "57,80", "9,12", "2.750,00"],
-            dates_original=["31/10/2026"],
-            dates_output=["31 ottobre 2026"],
-        ),
-        glossary=GlossaryResult(
-            terms=[
-                GlossaryTerm(
-                    term="modello F24",
-                    definition="È un modulo per pagare le imposte allo Stato. Si compila in banca, alla posta o online sul sito dell'Agenzia delle Entrate.",
-                ),
-                GlossaryTerm(
-                    term="CIVIS",
-                    definition="Servizio online dell'Agenzia delle Entrate per inviare documenti e richiedere chiarimenti senza recarsi allo sportello.",
-                ),
-                GlossaryTerm(
-                    term="CAF",
-                    definition="Centro di Assistenza Fiscale. Offre supporto gratuito per le pratiche fiscali e la compilazione delle dichiarazioni.",
-                ),
-            ]
-        ),
-    )
-
-
-@st.cache_data(show_spinner=False)
-def analizza_davvero(testo: str, lingua: str) -> EasyReadResult:
+def analizza_davvero(testo: str, lingua: str, on_step=None) -> EasyReadResult:
     from pipeline import Orchestrator
-    return Orchestrator().process(testo, lingua)
+    return Orchestrator().process(testo, lingua, on_step=on_step)
 
 
 import re as _re
@@ -352,8 +315,8 @@ def mostra_risultato(r: EasyReadResult) -> None:
         )
 
     with col_dx:
+        st.subheader("Cosa devi fare")
         if r.actions.actions:
-            st.subheader("Cosa devi fare")
             ordinate = sorted(r.actions.actions, key=lambda x: x.priority)
             for i, azione in enumerate(ordinate, 1):
                 pallino, etichetta = PRIORITA.get(azione.priority, ("⚪", ""))
@@ -365,6 +328,12 @@ def mostra_risultato(r: EasyReadResult) -> None:
                     if azione.amount:
                         dettagli.append(f"💶 {azione.amount}")
                     st.caption("  ·  ".join(dettagli))
+        else:
+            st.success(
+                "Per questo documento non devi fare nulla. "
+                "Conservalo per i tuoi archivi.",
+                icon="✅",
+            )
 
     if r.glossary.terms:
         st.subheader("Parole difficili spiegate")
@@ -403,7 +372,6 @@ def mostra_risultato(r: EasyReadResult) -> None:
 for _k, _v in [
     ("vista", "input"),
     ("risultato", None),
-    ("analisi_finta", False),
     ("testo", ""),
     ("scelta_tipo", "pdf"),
     ("lingua_analisi", "italiano"),
@@ -411,19 +379,6 @@ for _k, _v in [
     if _k not in st.session_state:
         st.session_state[_k] = _v
 
-# ── Sidebar ──────────────────────────────────────────────────────────────────
-with st.sidebar:
-    st.header("Impostazioni")
-    usa_finto = st.toggle(
-        "Modalità sviluppo",
-        value=True,
-        help="Mostra un risultato di esempio senza chiamare l'intelligenza artificiale. "
-        "Serve per lavorare sull'interfaccia senza attese.",
-    )
-    if usa_finto:
-        st.error("Risultato finto e sempre uguale.\n\nIl documento non viene letto.", icon="🧪")
-    else:
-        st.success("Analisi reale del tuo documento.\n\nCirca 3 minuti di attesa.", icon="🤖")
 
 # ── Tasto Home (solo nella vista risultati) ──────────────────────────────────
 if st.session_state.vista == "risultati":
@@ -432,6 +387,8 @@ if st.session_state.vista == "risultati":
         if st.button("← Analizza un altro documento", key="home"):
             st.session_state.vista = "input"
             st.session_state.risultato = None
+            st.session_state.testo = ""
+            st.session_state.scelta_tipo = "pdf"
             st.rerun()
 
 # ════════════════════════════════════════════════════════════
@@ -444,7 +401,7 @@ if st.session_state.vista == "input":
     <style>
     .block-container {
         max-width: 880px !important;
-        margin: 0 auto !important;
+        margin: 2.5rem auto !important;
         background: white !important;
         border-radius: 22px !important;
         box-shadow: 0 6px 32px rgba(108, 59, 245, 0.10) !important;
@@ -483,7 +440,7 @@ if st.session_state.vista == "input":
     # ── Selezione tipo input ─────────────────────────────────
     st.markdown('<p class="sezione-label">Come vuoi darci il documento?</p>', unsafe_allow_html=True)
 
-    c1, c2, c3 = st.columns(3, gap="small")
+    c1, c2 = st.columns(2, gap="small")
     with c1:
         if st.button(
             "📄  Carica PDF",
@@ -492,6 +449,7 @@ if st.session_state.vista == "input":
             key="btn_pdf",
         ):
             st.session_state.scelta_tipo = "pdf"
+            st.rerun()
     with c2:
         if st.button(
             "✏️  Incolla testo",
@@ -500,14 +458,7 @@ if st.session_state.vista == "input":
             key="btn_testo",
         ):
             st.session_state.scelta_tipo = "testo"
-    with c3:
-        if st.button(
-            "✨  Prova un esempio",
-            type="primary" if st.session_state.scelta_tipo == "esempio" else "secondary",
-            use_container_width=True,
-            key="btn_esempio",
-        ):
-            st.session_state.scelta_tipo = "esempio"
+            st.rerun()
 
     st.markdown("<div style='margin-top: 20px;'></div>", unsafe_allow_html=True)
 
@@ -533,13 +484,6 @@ if st.session_state.vista == "input":
             label_visibility="collapsed",
         )
 
-    else:  # esempio
-        st.markdown('<p class="sezione-label">Scegli un documento di esempio</p>', unsafe_allow_html=True)
-        for etichetta, nome_file in ESEMPI.items():
-            if st.button(etichetta, use_container_width=True, key=f"es_{nome_file}"):
-                st.session_state.testo = carica_esempio(nome_file)
-        if st.session_state.testo:
-            st.success(f"Documento pronto: {len(st.session_state.testo):,} caratteri.")
 
     st.markdown("<div style='margin-top: 24px;'></div>", unsafe_allow_html=True)
     st.divider()
@@ -580,8 +524,15 @@ elif st.session_state.vista == "caricamento":
     # CSS per ingrandire e centrare lo spinner nativo di Streamlit
     st.markdown("""
     <style>
-    .block-container { background: transparent !important; max-width:100% !important;
-        box-shadow:none !important; border:none !important; border-radius:0 !important; }
+    .block-container {
+        max-width: 880px !important;
+        margin: 2.5rem auto !important;
+        background: white !important;
+        border-radius: 22px !important;
+        box-shadow: 0 6px 32px rgba(108, 59, 245, 0.10) !important;
+        border: 1px solid #EDE9FE !important;
+        padding: 0 3rem 3rem !important;
+    }
     [data-testid="stSpinner"] {
         display: flex; flex-direction: column;
         align-items: center; justify-content: center;
@@ -602,22 +553,22 @@ elif st.session_state.vista == "caricamento":
     </style>
     """, unsafe_allow_html=True)
 
-    import time
-    with st.spinner("Sto analizzando il documento…"):
-        try:
-            if usa_finto:
-                time.sleep(1.5)  # rende lo spinner visibile in modalità sviluppo
-                st.session_state.risultato = risultato_finto()
-                st.session_state.analisi_finta = True
-            else:
-                st.session_state.risultato = analizza_davvero(
-                    st.session_state.testo, st.session_state.lingua_analisi
-                )
-                st.session_state.analisi_finta = False
-            st.session_state.vista = "risultati"
-        except Exception as errore:
-            st.error(f"Non sono riuscito a leggere il documento: {errore}")
-            st.session_state.vista = "input"
+    try:
+        with st.status("Sto leggendo il documento…", expanded=True) as stato:
+            def on_step(msg: str) -> None:
+                st.write(msg)
+                stato.update(label=msg)
+
+            st.session_state.risultato = analizza_davvero(
+                st.session_state.testo,
+                st.session_state.lingua_analisi,
+                on_step=on_step,
+            )
+            stato.update(label="✅ Analisi completata!", state="complete")
+        st.session_state.vista = "risultati"
+    except Exception as errore:
+        st.error(f"Non sono riuscito a leggere il documento: {errore}")
+        st.session_state.vista = "input"
     st.rerun()
 
 # ════════════════════════════════════════════════════════════
@@ -637,10 +588,4 @@ elif st.session_state.vista == "risultati" and st.session_state.risultato:
     }
     </style>
     """, unsafe_allow_html=True)
-    if st.session_state.analisi_finta:
-        st.warning(
-            "**Stai vedendo un risultato di esempio.** Il documento non è stato analizzato. "
-            "Per l'analisi reale, disattiva la **Modalità sviluppo** nella barra a sinistra.",
-            icon="🧪",
-        )
     mostra_risultato(st.session_state.risultato)

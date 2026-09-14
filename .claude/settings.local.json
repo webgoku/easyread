@@ -14,7 +14,16 @@
       "Bash(python -c \"import sys,json; models=[m['id'] for m in json.load\\(sys.stdin\\)['data'] if ':free' in m['id']]; print\\('\\\\n'.join\\(sorted\\(models\\)\\)\\)\")",
       "PowerShell(New-Item -ItemType Directory -Force \"c:\\\\0_HACKHATON\\\\easyread\\\\app\\\\pipeline\\\\prompts\")",
       "Bash(git mv *)",
-      "Bash(git check-ignore *)"
+      "Bash(git check-ignore *)",
+      "Bash(pkill -f streamlit)",
+      "Bash(streamlit run *)",
+      "PowerShell(\\(Get-Command streamlit -ErrorAction SilentlyContinue\\).Source; \\(Get-Command python -ErrorAction SilentlyContinue\\).Source)",
+      "PowerShell(python -m streamlit run app/streamlit_app.py --server.port 8501 --server.headless true --browser.gatherUsageStats false)",
+      "PowerShell(Get-NetTCPConnection -LocalPort 8501 -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess | ForEach-Object { Stop-Process -Id $_ -Force -ErrorAction SilentlyContinue }; Start-Sleep 2; python -m streamlit run app/streamlit_app.py --server.port 8501 --server.headless true --browser.gatherUsageStats false)",
+      "Bash(git commit -m 'test: aggiunge suite pytest con 47 test \\(models, utils, pipeline mock\\) *)",
+      "Bash(cp -r c:/0_HACKHATON/easyread/.claude/agents/* c:/0_HACKHATON/easyread/agents/)",
+      "Bash(cp -r c:/0_HACKHATON/easyread/.claude/skills/* c:/0_HACKHATON/easyread/agents/)",
+      "Bash(cp -r c:/0_HACKHATON/easyread/.claude/hooks c:/0_HACKHATON/easyread/agents/)"
     ]
   }
 }

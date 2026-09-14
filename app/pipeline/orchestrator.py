@@ -17,11 +17,29 @@ class Orchestrator:
         self.safety = SafetyAgent(**kwargs)
         self.glossary = GlossaryAgent(**kwargs)
 
-    def process(self, text: str, lingua_output: str = "italiano") -> EasyReadResult:
+    def process(
+        self,
+        text: str,
+        lingua_output: str = "italiano",
+        on_step: callable = None,
+    ) -> EasyReadResult:
+        def _step(msg: str) -> None:
+            if on_step:
+                on_step(msg)
+
+        _step("🔍 Identifico il tipo di documento…")
         classifier_result = self.classifier.run(text)
+
+        _step("✍️ Semplifico il testo in parole semplici…")
         simplified = self.simplifier.run(text, classifier_result, lingua_output)
+
+        _step("📋 Estraggo le azioni da intraprendere…")
         actions = self.action.run(text, simplified, classifier_result, lingua_output)
+
+        _step("🛡️ Verifico che numeri e date siano corretti…")
         safety = self.safety.run(text, simplified, actions)
+
+        _step("📖 Preparo il glossario dei termini difficili…")
         glossary = self.glossary.run(simplified, lingua_output)
 
         return EasyReadResult(
