@@ -54,7 +54,7 @@ LINGUE = {
 }
 
 
-st.set_page_config(page_title="EasyRead", page_icon="📄", layout="centered")
+st.set_page_config(page_title="EasyRead", page_icon="📄", layout="wide")
 
 st.markdown(
     """<style>
@@ -179,66 +179,51 @@ def analizza_davvero(testo: str, lingua: str) -> EasyReadResult:
 
 
 def mostra_risultato(r: EasyReadResult) -> None:
+    # Intestazione documento + metric a larghezza piena
     icona = ICONE_TIPO.get(r.classifier.document_type, "📄")
     st.caption(f"{icona}  {r.classifier.type_label}")
 
-    st.subheader("Cosa dice questo documento")
-    corpo = "".join(
-        f"<p>{par.strip()}</p>"
-        for par in r.simplified_text.split("\n\n")
-        if par.strip()
-    )
-    st.markdown(f'<div class="blocco-semplice">{corpo}</div>', unsafe_allow_html=True)
-
     if r.actions.amounts or r.actions.deadlines:
-        a, b = st.columns(2)
+        col_a, col_b, col_c = st.columns([1, 1, 2])
         if r.actions.amounts:
-            a.metric("Importo principale", r.actions.amounts[0])
+            col_a.metric("Importo principale", r.actions.amounts[0])
         if r.actions.deadlines:
-            b.metric("Prima scadenza", r.actions.deadlines[0])
+            col_b.metric("Prima scadenza", r.actions.deadlines[0])
 
-    if r.actions.actions:
-        st.subheader("Cosa devi fare")
-        ordinate = sorted(r.actions.actions, key=lambda x: x.priority)
-        for i, azione in enumerate(ordinate, 1):
-            pallino, etichetta = PRIORITA.get(azione.priority, ("⚪", ""))
-            with st.container(border=True):
-                st.markdown(f"**{i}. {azione.description}**")
-                dettagli = [f"{pallino} {etichetta}"]
-                if azione.deadline:
-                    dettagli.append(f"📅 entro il {azione.deadline}")
-                if azione.amount:
-                    dettagli.append(f"💶 {azione.amount}")
-                st.caption("  ·  ".join(dettagli))
+    st.divider()
+
+    # Due colonne principali
+    col_sx, col_dx = st.columns([1, 1], gap="large")
+
+    with col_sx:
+        st.subheader("Cosa dice questo documento")
+        corpo = "".join(
+            f"<p>{par.strip()}</p>"
+            for par in r.simplified_text.split("\n\n")
+            if par.strip()
+        )
+        st.markdown(f'<div class="blocco-semplice">{corpo}</div>', unsafe_allow_html=True)
+
+    with col_dx:
+        if r.actions.actions:
+            st.subheader("Cosa devi fare")
+            ordinate = sorted(r.actions.actions, key=lambda x: x.priority)
+            for i, azione in enumerate(ordinate, 1):
+                pallino, etichetta = PRIORITA.get(azione.priority, ("⚪", ""))
+                with st.container(border=True):
+                    st.markdown(f"**{i}. {azione.description}**")
+                    dettagli = [f"{pallino} {etichetta}"]
+                    if azione.deadline:
+                        dettagli.append(f"📅 entro il {azione.deadline}")
+                    if azione.amount:
+                        dettagli.append(f"💶 {azione.amount}")
+                    st.caption("  ·  ".join(dettagli))
 
     if r.glossary.terms:
         st.subheader("Parole difficili spiegate")
         for voce in r.glossary.terms:
             with st.expander(voce.term):
                 st.write(voce.definition)
-
-    st.subheader("Abbiamo controllato i numeri")
-    if r.safety.verified and not r.safety.warnings:
-        st.success(
-            "Le cifre e le date qui sopra sono le stesse del documento originale. "
-            "Non abbiamo cambiato nulla."
-        )
-    else:
-        st.error(
-            "Attenzione: alcune cifre o date potrebbero non corrispondere. "
-            "Controlla sempre il documento originale."
-        )
-    for avviso in r.safety.warnings:
-        st.warning(avviso)
-
-    with st.expander("Vedi il confronto con l'originale"):
-        a, b = st.columns(2)
-        a.markdown("**Nel documento originale**")
-        a.write(r.safety.amounts_original or "nessun importo")
-        a.write(r.safety.dates_original or "nessuna data")
-        b.markdown("**Nella nostra spiegazione**")
-        b.write(r.safety.amounts_output or "nessun importo")
-        b.write(r.safety.dates_output or "nessuna data")
 
     st.info(
         "**Questo strumento spiega soltanto cosa c'è scritto nel documento. "
@@ -248,7 +233,32 @@ def mostra_risultato(r: EasyReadResult) -> None:
         icon="ℹ️",
     )
 
+    st.divider()
 
+    (tab_tecnici,) = st.tabs(["🔍 Dettagli tecnici"])
+    with tab_tecnici:
+        st.caption("Verifica automatica della fedeltà della semplificazione.")
+        if r.safety.verified and not r.safety.warnings:
+            st.success("Cifre e date corrispondono al documento originale.")
+        else:
+            st.error("Alcune cifre o date potrebbero non corrispondere. Controlla il documento originale.")
+        for avviso in r.safety.warnings:
+            st.warning(avviso)
+        a, b = st.columns(2)
+        a.markdown("**Nel documento originale**")
+        a.write(r.safety.amounts_original or "nessun importo")
+        a.write(r.safety.dates_original or "nessuna data")
+        b.markdown("**Nella nostra spiegazione**")
+        b.write(r.safety.amounts_output or "nessun importo")
+        b.write(r.safety.dates_output or "nessuna data")
+
+
+# --- Stato sessione ---
+for _chiave, _default in [("vista", "input"), ("risultato", None), ("analisi_finta", False), ("testo", "")]:
+    if _chiave not in st.session_state:
+        st.session_state[_chiave] = _default
+
+# --- Logo ---
 st.markdown(
     """<div class="intestazione">
         <p class="marchio">EasyRead</p>
@@ -259,6 +269,15 @@ st.markdown(
     </div>""",
     unsafe_allow_html=True,
 )
+
+# --- Tasto Home (solo nella vista risultati) ---
+if st.session_state.vista == "risultati":
+    col_home, _ = st.columns([2, 5])
+    with col_home:
+        if st.button("← Analizza un altro documento", key="home"):
+            st.session_state.vista = "input"
+            st.session_state.risultato = None
+            st.rerun()
 
 with st.sidebar:
     st.header("Impostazioni")
@@ -273,64 +292,74 @@ with st.sidebar:
     else:
         st.success("Analisi reale del tuo documento.\n\nCirca 3 minuti di attesa.", icon="🤖")
 
-st.divider()
+# --- Vista input ---
+if st.session_state.vista == "input":
+    st.divider()
 
-if "testo" not in st.session_state:
-    st.session_state.testo = ""
-
-scelta = st.radio(
-    "Come vuoi darci il documento?",
-    ["Carica un PDF", "Scrivi o incolla il testo", "Usa un esempio"],
-    horizontal=True,
-)
-
-if scelta == "Carica un PDF":
-    caricato = st.file_uploader("Scegli il file", type="pdf")
-    if caricato:
-        st.session_state.testo = testo_da_pdf(caricato)
-        st.success(f"Documento letto: {len(st.session_state.testo)} caratteri.")
-
-elif scelta == "Scrivi o incolla il testo":
-    st.session_state.testo = st.text_area(
-        "Copia qui il testo della lettera",
-        value=st.session_state.testo,
-        height=220,
+    scelta = st.radio(
+        "Come vuoi darci il documento?",
+        ["Carica un PDF", "Scrivi o incolla il testo", "Usa un esempio"],
+        horizontal=True,
     )
 
-else:
-    for etichetta, nome_file in ESEMPI.items():
-        if st.button(etichetta, use_container_width=True):
-            st.session_state.testo = carica_esempio(nome_file)
-    if st.session_state.testo:
-        st.caption(f"Documento pronto: {len(st.session_state.testo)} caratteri.")
+    if scelta == "Carica un PDF":
+        caricato = st.file_uploader("Scegli il file", type="pdf")
+        if caricato:
+            st.session_state.testo = testo_da_pdf(caricato)
+            st.success(f"Documento letto: {len(st.session_state.testo)} caratteri.")
 
-st.divider()
+    elif scelta == "Scrivi o incolla il testo":
+        st.session_state.testo = st.text_area(
+            "Copia qui il testo della lettera",
+            value=st.session_state.testo,
+            height=220,
+        )
 
-lingua = LINGUE[
-    st.selectbox(
-        "In che lingua vuoi la spiegazione?",
-        list(LINGUE),
-        help="Il documento resta in italiano. Cambia solo la lingua della spiegazione.",
-    )
-]
+    else:
+        for etichetta, nome_file in ESEMPI.items():
+            if st.button(etichetta, use_container_width=True):
+                st.session_state.testo = carica_esempio(nome_file)
+        if st.session_state.testo:
+            st.caption(f"Documento pronto: {len(st.session_state.testo)} caratteri.")
 
-if st.button(
-    "Spiegamelo",
-    type="primary",
-    use_container_width=True,
-    disabled=not st.session_state.testo.strip(),
-):
-    if usa_finto:
+    st.divider()
+
+    lingua = LINGUE[
+        st.selectbox(
+            "In che lingua vuoi la spiegazione?",
+            list(LINGUE),
+            help="Il documento resta in italiano. Cambia solo la lingua della spiegazione.",
+        )
+    ]
+
+    if st.button(
+        "Spiegamelo",
+        type="primary",
+        use_container_width=True,
+        disabled=not st.session_state.testo.strip(),
+    ):
+        if usa_finto:
+            st.session_state.risultato = risultato_finto()
+            st.session_state.analisi_finta = True
+            st.session_state.vista = "risultati"
+            st.rerun()
+        else:
+            with st.spinner("Sto leggendo il documento. Ci vogliono alcuni minuti."):
+                try:
+                    st.session_state.risultato = analizza_davvero(st.session_state.testo, lingua)
+                    st.session_state.analisi_finta = False
+                    st.session_state.vista = "risultati"
+                    st.rerun()
+                except Exception as errore:
+                    st.error(f"Non sono riuscito a leggere il documento: {errore}")
+
+# --- Vista risultati ---
+elif st.session_state.vista == "risultati" and st.session_state.risultato:
+    if st.session_state.analisi_finta:
         st.warning(
             "**Stai vedendo un risultato finto.** È un esempio fisso scritto nel codice: "
             "non ha letto il tuo documento. Per analizzarlo davvero, spegni "
             "**Modalità sviluppo** nella barra a sinistra.",
             icon="🧪",
         )
-        mostra_risultato(risultato_finto())
-    else:
-        with st.spinner("Sto leggendo il documento. Ci vogliono alcuni minuti."):
-            try:
-                mostra_risultato(analizza_davvero(st.session_state.testo, lingua))
-            except Exception as errore:
-                st.error(f"Non sono riuscito a leggere il documento: {errore}")
+    mostra_risultato(st.session_state.risultato)
