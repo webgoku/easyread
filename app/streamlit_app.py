@@ -48,6 +48,23 @@ st.markdown(
     """<style>
     html, body, [class*="css"] { font-size: 18px; }
     .main p, .main li { font-size: 1.05rem; line-height: 1.75; }
+    .intestazione { text-align: center; padding: 16px 0 4px; }
+    .intestazione .marchio {
+        font-size: 3.6rem; font-weight: 800; letter-spacing: -0.03em;
+        color: #4c1d95; line-height: 1.1; margin: 0;
+    }
+    .intestazione .accento {
+        width: 76px; height: 4px; background: #7c3aed;
+        border-radius: 2px; margin: 20px auto 28px;
+    }
+    .intestazione .domanda {
+        font-size: 1.5rem; font-weight: 600; color: #1f2937;
+        margin: 0 0 14px; line-height: 1.35;
+    }
+    .intestazione .spiega {
+        font-size: 1.05rem; color: #6b7280; max-width: 460px;
+        margin: 0 auto; line-height: 1.65;
+    }
     .blocco-semplice {
         background: #f7f4ff; border-left: 5px solid #7c3aed;
         padding: 20px 24px; border-radius: 10px; margin: 8px 0 20px;
@@ -191,9 +208,16 @@ def mostra_risultato(r: EasyReadResult) -> None:
     )
 
 
-st.title("📄 EasyRead")
-st.markdown("### Hai ricevuto una lettera che non capisci?")
-st.write("Caricala qui. Ti spieghiamo con parole semplici cosa dice e cosa devi fare.")
+st.markdown(
+    """<div class="intestazione">
+        <p class="marchio">EasyRead</p>
+        <div class="accento"></div>
+        <p class="domanda">Hai ricevuto una lettera che non capisci?</p>
+        <p class="spiega">Caricala qui: te la spieghiamo con parole semplici
+        e ti diciamo cosa devi fare.</p>
+    </div>""",
+    unsafe_allow_html=True,
+)
 
 with st.sidebar:
     st.header("Impostazioni")
@@ -204,9 +228,9 @@ with st.sidebar:
         "Serve per lavorare sull'interfaccia senza attese.",
     )
     if usa_finto:
-        st.caption("⚡ Dati finti, risposta immediata.")
+        st.error("Risultato finto e sempre uguale.\n\nIl documento non viene letto.", icon="🧪")
     else:
-        st.caption("🐢 Chiamate reali: circa 3 minuti a documento.")
+        st.success("Analisi reale del tuo documento.\n\nCirca 3 minuti di attesa.", icon="🤖")
 
 st.divider()
 
@@ -248,6 +272,12 @@ if st.button(
     disabled=not st.session_state.testo.strip(),
 ):
     if usa_finto:
+        st.warning(
+            "**Stai vedendo un risultato finto.** È un esempio fisso scritto nel codice: "
+            "non ha letto il tuo documento. Per analizzarlo davvero, spegni "
+            "**Modalità sviluppo** nella barra a sinistra.",
+            icon="🧪",
+        )
         mostra_risultato(risultato_finto())
     else:
         with st.spinner("Sto leggendo il documento. Ci vogliono alcuni minuti."):
